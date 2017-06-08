@@ -3,8 +3,16 @@ define('app',["require", "exports"], function (require, exports) {
     Object.defineProperty(exports, "__esModule", { value: true });
     var App = (function () {
         function App() {
-            this.message = 'Hello World!';
+            this.message = 'Aurelia demo';
         }
+        App.prototype.configureRouter = function (config, router) {
+            config.title = 'Aurelia';
+            config.map([
+                { route: ['', 'home'], name: 'home', moduleId: 'views/home-view/home-view', title: 'Home', nav: true },
+                { route: 'hello', name: 'hello', moduleId: 'views/hello-view/hello-view', nav: true, title: 'Hello' },
+            ]);
+            this.router = router;
+        };
         return App;
     }());
     exports.App = App;
@@ -31,7 +39,8 @@ define('main',["require", "exports", "./environment"], function (require, export
     function configure(aurelia) {
         aurelia.use
             .standardConfiguration()
-            .feature('resources');
+            .feature('resources')
+            .plugin('aurelia-router');
         if (environment_1.default.debug) {
             aurelia.use.developmentLogging();
         }
@@ -76,6 +85,31 @@ define('hello/hello',["require", "exports", "aurelia-framework"], function (requ
     exports.Hello = Hello;
 });
 
-define('text!app.html', ['module'], function(module) { module.exports = "<template>\n  <h1>${message}</h1>\n\n  <require from=\"./hello/hello\"></require> \n  <say-hello></say-hello>\n\n</template>\n"; });
+define('views/hello-view/hello-view',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var HelloView = (function () {
+        function HelloView() {
+            this.message = 'Hello World!';
+        }
+        return HelloView;
+    }());
+    exports.HelloView = HelloView;
+});
+
+define('views/home-view/home-view',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var HomeView = (function () {
+        function HomeView() {
+        }
+        return HomeView;
+    }());
+    exports.HomeView = HomeView;
+});
+
+define('text!app.html', ['module'], function(module) { module.exports = "<template>\n  <h1>${message}</h1>\n\n  <nav>\n    <ul>\n      <li repeat.for=\"row of router.navigation\">\n        <a href.bind=\"row.href\">${row.title}</a>\n      </li>\n    <ul>\n  </nav>\n\n  <router-view></router-view>\n</template>\n"; });
 define('text!hello/hello.html', ['module'], function(module) { module.exports = "<template> \r\n  <input value.bind=\"firstName\"> \r\n  <input value.bind=\"lastName\"> \r\n  <button click.trigger=\"sayHello()\">Say Hello</button> \r\n</template>\r\n"; });
+define('text!views/hello-view/hello-view.html', ['module'], function(module) { module.exports = "<template>\r\n  <h2>${message}</h2>\r\n\r\n  <require from=\"../../hello/hello\"></require> \r\n  <say-hello></say-hello>\r\n\r\n</template>"; });
+define('text!views/home-view/home-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <h2>Home</h2>\r\n</template>"; });
 //# sourceMappingURL=app-bundle.js.map

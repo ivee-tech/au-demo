@@ -1,7 +1,13 @@
 <template>
   <h1>${message}</h1>
 
-  <require from="./hello/hello"></require> 
-  <say-hello></say-hello>
+  <nav>
+    <ul>
+      <li repeat.for="row of router.navigation">
+        <a href.bind="row.href">${row.title}</a>
+      </li>
+    <ul>
+  </nav>
 
+  <router-view></router-view>
 </template>
