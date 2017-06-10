@@ -1,0 +1,10 @@
+<template>
+    <div>
+        <label>Search for GIFs</label>
+        <input type="text" value.bind="searchText" />
+        <button click.delegate="notifySearch()" >Search</button>
+    </div>
+    <div repeat.for="image of images">
+        <img src.bind="image.url" />
+    </div>
+</template>
