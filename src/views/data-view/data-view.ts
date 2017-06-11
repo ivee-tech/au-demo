@@ -16,7 +16,7 @@ export class DataView {
         this.dataSvc.searchGifs(data).then(output => {
             this.images = [];
             for(let d of output.data) {
-                this.images.push({ caption: d.caption, url: d.images.original.url });
+                this.images.push({ caption: d.caption, url: d.images.fixed_width.url });
             }
         });
     }

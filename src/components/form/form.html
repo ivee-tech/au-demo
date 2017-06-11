@@ -1,0 +1,41 @@
+<template>
+    <div>
+        <h2>Form</h2>
+
+        <require from="../spinner/spinner"></require>
+        <iv-spinner spinner-type="spinner-cubes" is-running.bind="actionState === 1"></iv-spinner>
+
+        <div class="col-md-3" if.bind="actionState !== 1">
+            <div class="panel">
+                ${loginErrorMessage}
+            </div>
+            <form>
+                <div class="form-group">
+                    <label for="user">User name</label>
+                    <input type="text" id="user" name="user" class="form-control" placeholder="Username" value.bind="userName & validate">
+                </div>
+                <div class="form-group">
+                    <label for="pass">Password</label>
+                    <input type="password" class="form-control" id="pass" name="pass" placeholder="Password" value.bind="password & validate">
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea class="form-control" id="address" name="address" placeholder="Address" value.bind="address & validate"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="state">State</label>
+                    <select id="state" name="state">
+                        <option repeat.for="s of states" value.bind="state">${s}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="isCitizen">Citizen?</label>
+                    <input type="checkbox" class="form-control" id="isCitizen" name="isCitizen" placeholder="Citizen?" checked.bind="isCitizen & validate">
+                </div>
+                <hr />
+                <input type="submit" name="submit" class="btn btn-info" value="Login" click.delegate="submit()">
+            </form>
+
+        </div>
+    </div>
+</template>

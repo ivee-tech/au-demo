@@ -13,7 +13,8 @@ export function configure(aurelia: Aurelia) {
   aurelia.use
     .standardConfiguration()
     .feature('resources')
-    .plugin('aurelia-router');
+    .plugin('aurelia-router')
+    .plugin('aurelia-validation');
 
   if (environment.debug) {
     aurelia.use.developmentLogging();

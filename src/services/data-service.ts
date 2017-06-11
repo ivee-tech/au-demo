@@ -1,5 +1,4 @@
-﻿// import 'fetch';
-import { inject } from 'aurelia-framework';
+﻿import { inject } from 'aurelia-framework';
 import { HttpClient, json, RequestInit } from 'aurelia-fetch-client';
 
 import environment from '../environment';
@@ -39,7 +38,7 @@ export class DataService {
     }
 
     searchGifs(searchText: string) {
-        let url: string = `http://api.giphy.com/v1/gifs/search?q=${searchText}&api_key=dc6zaTOxFJmzC&limit=1&offset=0`;
+        let url: string = `http://api.giphy.com/v1/gifs/search?q=${searchText}&api_key=dc6zaTOxFJmzC&limit=10&offset=0`;
         return this.loadData(url);
     }
 
