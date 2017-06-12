@@ -1,6 +1,8 @@
 # au-demo
 
-[![Aurelia](assets/images/main-logo.svg)](http://aurelia.io/)
+[![Aurelia](http://editor.ivee.tech/svc/data/ivusers/public@ivee.tech/images/main-logo.svg)](http://aurelia.io/)
+
+[Aurelia presentation](http://editor.ivee.tech/#/viewer?d=1&fn=aurelia.json)
 
 ## Aurelia demo application
 "Aurelia is a JavaScript client framework for mobile, desktop and web leveraging simple conventions and empowering creativity."
@@ -24,3 +26,5 @@
 + In the terminal, navigate to the project folder
 + Run *au e2e*
 + Check the results of e2e test execution
+
+

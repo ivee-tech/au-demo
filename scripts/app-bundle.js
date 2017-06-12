@@ -29,12 +29,12 @@ define('components/image-dlg/image-dlg',["require", "exports", "aurelia-framewor
         ImageDlg.prototype.activate = function (image) {
             this.image = image;
         };
+        ImageDlg = __decorate([
+            aurelia_framework_1.inject(aurelia_dialog_1.DialogController),
+            __metadata("design:paramtypes", [aurelia_dialog_1.DialogController])
+        ], ImageDlg);
         return ImageDlg;
     }());
-    ImageDlg = __decorate([
-        aurelia_framework_1.inject(aurelia_dialog_1.DialogController),
-        __metadata("design:paramtypes", [aurelia_dialog_1.DialogController])
-    ], ImageDlg);
     exports.ImageDlg = ImageDlg;
 });
 
@@ -85,13 +85,13 @@ define('app',["require", "exports", "aurelia-framework", "aurelia-dialog", "aure
                 }
             });
         };
+        App = __decorate([
+            aurelia_framework_1.inject(aurelia_dialog_1.DialogService, aurelia_event_aggregator_1.EventAggregator),
+            __metadata("design:paramtypes", [aurelia_dialog_1.DialogService,
+                aurelia_event_aggregator_1.EventAggregator])
+        ], App);
         return App;
     }());
-    App = __decorate([
-        aurelia_framework_1.inject(aurelia_dialog_1.DialogService, aurelia_event_aggregator_1.EventAggregator),
-        __metadata("design:paramtypes", [aurelia_dialog_1.DialogService,
-            aurelia_event_aggregator_1.EventAggregator])
-    ], App);
     exports.App = App;
 });
 
@@ -204,12 +204,12 @@ define('services/data-service',["require", "exports", "aurelia-framework", "aure
                 });
             }
         };
+        DataService = __decorate([
+            aurelia_framework_1.inject(aurelia_fetch_client_1.HttpClient),
+            __metadata("design:paramtypes", [aurelia_fetch_client_1.HttpClient])
+        ], DataService);
         return DataService;
     }());
-    DataService = __decorate([
-        aurelia_framework_1.inject(aurelia_fetch_client_1.HttpClient),
-        __metadata("design:paramtypes", [aurelia_fetch_client_1.HttpClient])
-    ], DataService);
     exports.DataService = DataService;
 });
 
@@ -237,20 +237,20 @@ define('components/data/data',["require", "exports", "aurelia-framework", "aurel
             this.selectedImage = image;
             this.ea.publish('OPEN_IMAGE_DLG', this.selectedImage);
         };
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", Array)
+        ], Data.prototype, "images", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", Object)
+        ], Data.prototype, "search", void 0);
+        Data = __decorate([
+            aurelia_framework_1.inject(aurelia_event_aggregator_1.EventAggregator),
+            __metadata("design:paramtypes", [aurelia_event_aggregator_1.EventAggregator])
+        ], Data);
         return Data;
     }());
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", Array)
-    ], Data.prototype, "images", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", Object)
-    ], Data.prototype, "search", void 0);
-    Data = __decorate([
-        aurelia_framework_1.inject(aurelia_event_aggregator_1.EventAggregator),
-        __metadata("design:paramtypes", [aurelia_event_aggregator_1.EventAggregator])
-    ], Data);
     exports.Data = Data;
 });
 
@@ -297,33 +297,33 @@ define('components/form/form',["require", "exports", "aurelia-framework", "aurel
                 }
             });
         };
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Form.prototype, "userName", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Form.prototype, "password", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Form.prototype, "address", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Form.prototype, "state", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", Boolean)
+        ], Form.prototype, "isCitizen", void 0);
+        Form = __decorate([
+            aurelia_framework_1.inject(aurelia_framework_1.NewInstance.of(aurelia_validation_1.ValidationController)),
+            aurelia_framework_1.customElement('d-form'),
+            __metadata("design:paramtypes", [aurelia_validation_1.ValidationController])
+        ], Form);
         return Form;
     }());
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Form.prototype, "userName", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Form.prototype, "password", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Form.prototype, "address", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Form.prototype, "state", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", Boolean)
-    ], Form.prototype, "isCitizen", void 0);
-    Form = __decorate([
-        aurelia_framework_1.inject(aurelia_framework_1.NewInstance.of(aurelia_validation_1.ValidationController)),
-        aurelia_framework_1.customElement('d-form'),
-        __metadata("design:paramtypes", [aurelia_validation_1.ValidationController])
-    ], Form);
     exports.Form = Form;
 });
 
@@ -366,20 +366,20 @@ define('components/hello/hello',["require", "exports", "aurelia-framework"], fun
         Hello.prototype.firstNameChanged = function (newValue, oldValue) {
             console.log("firstName changed: newValue: " + newValue + ", oldValue: " + oldValue);
         };
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Hello.prototype, "firstName", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Hello.prototype, "lastName", void 0);
+        Hello = __decorate([
+            aurelia_framework_1.customElement('say-hello'),
+            __metadata("design:paramtypes", [])
+        ], Hello);
         return Hello;
     }());
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Hello.prototype, "firstName", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Hello.prototype, "lastName", void 0);
-    Hello = __decorate([
-        aurelia_framework_1.customElement('say-hello'),
-        __metadata("design:paramtypes", [])
-    ], Hello);
     exports.Hello = Hello;
 });
 
@@ -412,23 +412,23 @@ define('components/spinner/spinner',["require", "exports", "aurelia-framework"],
         Spinner.prototype.attached = function (argument) {
             console.log(this.isRunning);
         };
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", Number)
+        ], Spinner.prototype, "delay", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", String)
+        ], Spinner.prototype, "spinnerType", void 0);
+        __decorate([
+            aurelia_framework_1.bindable,
+            __metadata("design:type", Boolean)
+        ], Spinner.prototype, "isRunning", void 0);
+        Spinner = __decorate([
+            aurelia_framework_1.customElement('iv-spinner')
+        ], Spinner);
         return Spinner;
     }());
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", Number)
-    ], Spinner.prototype, "delay", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", String)
-    ], Spinner.prototype, "spinnerType", void 0);
-    __decorate([
-        aurelia_framework_1.bindable,
-        __metadata("design:type", Boolean)
-    ], Spinner.prototype, "isRunning", void 0);
-    Spinner = __decorate([
-        aurelia_framework_1.customElement('iv-spinner')
-    ], Spinner);
     exports.Spinner = Spinner;
 });
 
@@ -465,12 +465,12 @@ define('views/data-view/data-view',["require", "exports", "aurelia-framework", "
                 }, 1000);
             });
         };
+        DataView = __decorate([
+            aurelia_framework_1.inject(data_service_1.DataService),
+            __metadata("design:paramtypes", [data_service_1.DataService])
+        ], DataView);
         return DataView;
     }());
-    DataView = __decorate([
-        aurelia_framework_1.inject(data_service_1.DataService),
-        __metadata("design:paramtypes", [data_service_1.DataService])
-    ], DataView);
     exports.DataView = DataView;
 });
 
@@ -485,6 +485,17 @@ define('views/form-view/form-view',["require", "exports"], function (require, ex
     exports.FormView = FormView;
 });
 
+define('views/home-view/home-view',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var HomeView = (function () {
+        function HomeView() {
+        }
+        return HomeView;
+    }());
+    exports.HomeView = HomeView;
+});
+
 define('views/hello-view/hello-view',["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -495,17 +506,6 @@ define('views/hello-view/hello-view',["require", "exports"], function (require, 
         return HelloView;
     }());
     exports.HelloView = HelloView;
-});
-
-define('views/home-view/home-view',["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var HomeView = (function () {
-        function HomeView() {
-        }
-        return HomeView;
-    }());
-    exports.HomeView = HomeView;
 });
 
 define('aurelia-dialog/dialog-configuration',["require", "exports", "./renderer", "./dialog-settings", "./dialog-renderer", "aurelia-pal"], function (require, exports, renderer_1, dialog_settings_1, dialog_renderer_1, aurelia_pal_1) {
