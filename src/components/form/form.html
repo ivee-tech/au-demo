@@ -1,13 +1,12 @@
 <template>
     <div>
-        <h2>Form</h2>
 
-        <require from="../spinner/spinner"></require>
-        <iv-spinner spinner-type="spinner-cubes" is-running.bind="actionState === 1"></iv-spinner>
-
-        <div class="col-md-3" if.bind="actionState !== 1">
-            <div class="panel">
-                ${loginErrorMessage}
+        <div class="col-md-3">
+            <div class="alert alert-danger" if.bind="errorMessage">
+                ${errorMessage}
+            </div>
+            <div class="alert alert-info" if.bind="infoMessage">
+                ${infoMessage}
             </div>
             <form>
                 <div class="form-group">
@@ -24,7 +23,7 @@
                 </div>
                 <div class="form-group">
                     <label for="state">State</label>
-                    <select id="state" name="state">
+                    <select class="form-control" id="state" name="state">
                         <option repeat.for="s of states" value.bind="state">${s}</option>
                     </select>
                 </div>
@@ -33,7 +32,7 @@
                     <input type="checkbox" class="form-control" id="isCitizen" name="isCitizen" placeholder="Citizen?" checked.bind="isCitizen & validate">
                 </div>
                 <hr />
-                <input type="submit" name="submit" class="btn btn-info" value="Login" click.delegate="submit()">
+                <input type="submit" name="submit" class="btn btn-info" value="Submit" click.delegate="submit()">
             </form>
 
         </div>

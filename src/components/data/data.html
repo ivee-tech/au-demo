@@ -1,11 +1,18 @@
 <template>
-    <div>
+    
+    <require from="./data.css"></require>
+    <div class="col-md-3 form-group">
         <label>Search for GIFs</label>
-        <input type="text" value.bind="searchText" />
-        <button click.delegate="notifySearch()" >Search</button>
+        <input type="text" class="form-control d-search-txt" value.bind="searchText" />
+        <button class="btn btn-info" click.delegate="notifySearch()" >Search</button>
     </div>
-    <div repeat.for="image of images">
-        <img src.bind="image.url" />
-        <label>${image.caption}</label>
+    <br/>
+    <div class="d-images">
+        <div class="row" repeat.for="image of images">
+            <div class="col-md-2">
+                <a href="#" click.delegate="notifyOpenImageDlg(image)"><img class="img-responsive img-rounded" src.bind="image.url" /></a>
+                <label>${image.caption}</label>
+            </div>
+        </div>
     </div>
 </template>

@@ -1,9 +1,65 @@
-define('app',["require", "exports"], function (require, exports) {
+define('models/image',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var Image = (function () {
+        function Image() {
+        }
+        return Image;
+    }());
+    exports.Image = Image;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+define('components/image-dlg/image-dlg',["require", "exports", "aurelia-framework", "aurelia-dialog"], function (require, exports, aurelia_framework_1, aurelia_dialog_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var ImageDlg = (function () {
+        function ImageDlg(controller) {
+            this.controller = controller;
+            this.controller.settings.centerHorizontalOnly = true;
+        }
+        ImageDlg.prototype.activate = function (image) {
+            this.image = image;
+        };
+        return ImageDlg;
+    }());
+    ImageDlg = __decorate([
+        aurelia_framework_1.inject(aurelia_dialog_1.DialogController),
+        __metadata("design:paramtypes", [aurelia_dialog_1.DialogController])
+    ], ImageDlg);
+    exports.ImageDlg = ImageDlg;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+define('app',["require", "exports", "aurelia-framework", "aurelia-dialog", "aurelia-event-aggregator", "./components/image-dlg/image-dlg"], function (require, exports, aurelia_framework_1, aurelia_dialog_1, aurelia_event_aggregator_1, image_dlg_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var App = (function () {
-        function App() {
+        function App(dialogService, ea) {
+            var _this = this;
+            this.dialogService = dialogService;
+            this.ea = ea;
             this.message = 'Aurelia demo';
+            this.openImageDlgSubscr = ea.subscribe('OPEN_IMAGE_DLG', function (img) {
+                _this.image = img;
+                _this.openImageDlg();
+            });
         }
         App.prototype.configureRouter = function (config, router) {
             config.title = 'Aurelia';
@@ -15,8 +71,27 @@ define('app',["require", "exports"], function (require, exports) {
             ]);
             this.router = router;
         };
+        App.prototype.detached = function () {
+            this.openImageDlgSubscr.dispose();
+        };
+        App.prototype.openImageDlg = function () {
+            this.dialogService.open({ viewModel: image_dlg_1.ImageDlg, model: this.image }).whenClosed(function (response) {
+                console.log(response);
+                if (!response.wasCancelled) {
+                    console.log('OK');
+                }
+                else {
+                    console.log('cancelled');
+                }
+            });
+        };
         return App;
     }());
+    App = __decorate([
+        aurelia_framework_1.inject(aurelia_dialog_1.DialogService, aurelia_event_aggregator_1.EventAggregator),
+        __metadata("design:paramtypes", [aurelia_dialog_1.DialogService,
+            aurelia_event_aggregator_1.EventAggregator])
+    ], App);
     exports.App = App;
 });
 
@@ -43,7 +118,8 @@ define('main',["require", "exports", "./environment"], function (require, export
             .standardConfiguration()
             .feature('resources')
             .plugin('aurelia-router')
-            .plugin('aurelia-validation');
+            .plugin('aurelia-validation')
+            .plugin('aurelia-dialog');
         if (environment_1.default.debug) {
             aurelia.use.developmentLogging();
         }
@@ -53,17 +129,6 @@ define('main',["require", "exports", "./environment"], function (require, export
         aurelia.start().then(function () { return aurelia.setRoot(); });
     }
     exports.configure = configure;
-});
-
-define('models/image',["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var Image = (function () {
-        function Image() {
-        }
-        return Image;
-    }());
-    exports.Image = Image;
 });
 
 define('resources/index',["require", "exports"], function (require, exports) {
@@ -157,15 +222,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-define('components/data/data',["require", "exports", "aurelia-framework"], function (require, exports, aurelia_framework_1) {
+define('components/data/data',["require", "exports", "aurelia-framework", "aurelia-event-aggregator"], function (require, exports, aurelia_framework_1, aurelia_event_aggregator_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Data = (function () {
-        function Data() {
+        function Data(ea) {
+            this.ea = ea;
             this.images = [];
         }
         Data.prototype.notifySearch = function () {
             this.search({ data: this.searchText });
+        };
+        Data.prototype.notifyOpenImageDlg = function (image) {
+            this.selectedImage = image;
+            this.ea.publish('OPEN_IMAGE_DLG', this.selectedImage);
         };
         return Data;
     }());
@@ -177,6 +247,10 @@ define('components/data/data',["require", "exports", "aurelia-framework"], funct
         aurelia_framework_1.bindable,
         __metadata("design:type", Object)
     ], Data.prototype, "search", void 0);
+    Data = __decorate([
+        aurelia_framework_1.inject(aurelia_event_aggregator_1.EventAggregator),
+        __metadata("design:paramtypes", [aurelia_event_aggregator_1.EventAggregator])
+    ], Data);
     exports.Data = Data;
 });
 
@@ -204,18 +278,21 @@ define('components/form/form',["require", "exports", "aurelia-framework", "aurel
         }
         Form.prototype.submit = function () {
             var _this = this;
+            this.infoMessage = null;
+            this.errorMessage = null;
             this.validationController
                 .validate()
                 .then(function (result) {
                 if (result.valid) {
-                    _this.loginErrorMessage = null;
-                    alert('Validation successful. Submitting...');
+                    _this.errorMessage = null;
+                    _this.infoMessage = 'Validation successful. Submitting...';
                 }
                 else {
-                    _this.loginErrorMessage = 'Validaton error(s):';
+                    _this.infoMessage = null;
+                    _this.errorMessage = 'Validaton error(s):';
                     for (var _i = 0, _a = _this.validationController.errors; _i < _a.length; _i++) {
                         var error = _a[_i];
-                        _this.loginErrorMessage += error.message + ' ';
+                        _this.errorMessage += error.message + ' ';
                     }
                 }
             });
@@ -266,12 +343,39 @@ define('components/hello/hello',["require", "exports", "aurelia-framework"], fun
         function Hello() {
             this.firstName = 'John';
             this.lastName = 'Doe';
+            console.log('Hello - ctor');
         }
         Hello.prototype.sayHello = function () {
             alert("Hello " + this.firstName + " " + this.lastName + ". Nice to meet you.");
         };
+        Hello.prototype.created = function (owningView, myView) {
+            console.log('Hello - created');
+        };
+        Hello.prototype.bind = function (bindingContext, overrideContext) {
+            console.log('Hello - bind');
+        };
+        Hello.prototype.attached = function () {
+            console.log('Hello - attached');
+        };
+        Hello.prototype.detached = function () {
+            console.log('Hello - detached');
+        };
+        Hello.prototype.unbind = function () {
+            console.log('Hello - unbind');
+        };
+        Hello.prototype.firstNameChanged = function (newValue, oldValue) {
+            console.log("firstName changed: newValue: " + newValue + ", oldValue: " + oldValue);
+        };
         return Hello;
     }());
+    __decorate([
+        aurelia_framework_1.bindable,
+        __metadata("design:type", String)
+    ], Hello.prototype, "firstName", void 0);
+    __decorate([
+        aurelia_framework_1.bindable,
+        __metadata("design:type", String)
+    ], Hello.prototype, "lastName", void 0);
     Hello = __decorate([
         aurelia_framework_1.customElement('say-hello'),
         __metadata("design:paramtypes", [])
@@ -328,6 +432,48 @@ define('components/spinner/spinner',["require", "exports", "aurelia-framework"],
     exports.Spinner = Spinner;
 });
 
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+define('views/data-view/data-view',["require", "exports", "aurelia-framework", "../../services/data-service"], function (require, exports, aurelia_framework_1, data_service_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var DataView = (function () {
+        function DataView(dataSvc) {
+            this.dataSvc = dataSvc;
+            this.images = [];
+            this.actionState = 0;
+        }
+        DataView.prototype.searchGifs = function (event) {
+            var _this = this;
+            var data = event.data;
+            this.actionState = 1;
+            this.dataSvc.searchGifs(data).then(function (output) {
+                _this.images = [];
+                for (var _i = 0, _a = output.data; _i < _a.length; _i++) {
+                    var d = _a[_i];
+                    _this.images.push({ caption: d.caption, url: d.images.downsized.url });
+                }
+                setTimeout(function () {
+                    _this.actionState = 0;
+                }, 1000);
+            });
+        };
+        return DataView;
+    }());
+    DataView = __decorate([
+        aurelia_framework_1.inject(data_service_1.DataService),
+        __metadata("design:paramtypes", [data_service_1.DataService])
+    ], DataView);
+    exports.DataView = DataView;
+});
+
 define('views/form-view/form-view',["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -362,41 +508,852 @@ define('views/home-view/home-view',["require", "exports"], function (require, ex
     exports.HomeView = HomeView;
 });
 
+define('aurelia-dialog/dialog-configuration',["require", "exports", "./renderer", "./dialog-settings", "./dialog-renderer", "aurelia-pal"], function (require, exports, renderer_1, dialog_settings_1, dialog_renderer_1, aurelia_pal_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var defaultRenderer = dialog_renderer_1.DialogRenderer;
+    var resources = {
+        'ux-dialog': aurelia_pal_1.PLATFORM.moduleName('./ux-dialog'),
+        'ux-dialog-header': aurelia_pal_1.PLATFORM.moduleName('./ux-dialog-header'),
+        'ux-dialog-body': aurelia_pal_1.PLATFORM.moduleName('./ux-dialog-body'),
+        'ux-dialog-footer': aurelia_pal_1.PLATFORM.moduleName('./ux-dialog-footer'),
+        'attach-focus': aurelia_pal_1.PLATFORM.moduleName('./attach-focus')
+    };
+    // tslint:disable-next-line:max-line-length
+    var defaultCSSText = "ux-dialog-container,ux-dialog-overlay{position:fixed;top:0;right:0;bottom:0;left:0}ux-dialog-overlay{opacity:0}ux-dialog-overlay.active{opacity:1}ux-dialog-container{display:block;transition:opacity .2s linear;opacity:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}ux-dialog-container.active{opacity:1}ux-dialog-container>div{padding:30px}ux-dialog-container>div>div{display:block;min-width:300px;width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;height:-moz-fit-content;height:-webkit-fit-content;height:fit-content;margin:auto}ux-dialog-container,ux-dialog-container>div,ux-dialog-container>div>div{outline:0}ux-dialog{display:table;box-shadow:0 5px 15px rgba(0,0,0,.5);border:1px solid rgba(0,0,0,.2);border-radius:5px;padding:3px;min-width:300px;width:-moz-fit-content;width:-webkit-fit-content;width:fit-content;height:-moz-fit-content;height:-webkit-fit-content;height:fit-content;margin:auto;border-image-source:initial;border-image-slice:initial;border-image-width:initial;border-image-outset:initial;border-image-repeat:initial;background:#fff}ux-dialog>ux-dialog-header{display:block;padding:16px;border-bottom:1px solid #e5e5e5}ux-dialog>ux-dialog-header>button{float:right;border:none;display:block;width:32px;height:32px;background:0 0;font-size:22px;line-height:16px;margin:-14px -16px 0 0;padding:0;cursor:pointer}ux-dialog>ux-dialog-body{display:block;padding:16px}ux-dialog>ux-dialog-footer{display:block;padding:6px;border-top:1px solid #e5e5e5;text-align:right}ux-dialog>ux-dialog-footer button{color:#333;background-color:#fff;padding:6px 12px;font-size:14px;text-align:center;white-space:nowrap;vertical-align:middle;-ms-touch-action:manipulation;touch-action:manipulation;cursor:pointer;background-image:none;border:1px solid #ccc;border-radius:4px;margin:5px 0 5px 5px}ux-dialog>ux-dialog-footer button:disabled{cursor:default;opacity:.45}ux-dialog>ux-dialog-footer button:hover:enabled{color:#333;background-color:#e6e6e6;border-color:#adadad}.ux-dialog-open{overflow:hidden}";
+    /**
+     * A configuration builder for the dialog plugin.
+     */
+    var DialogConfiguration = (function () {
+        function DialogConfiguration(frameworkConfiguration, applySetter) {
+            var _this = this;
+            this.resources = [];
+            this.fwConfig = frameworkConfiguration;
+            this.settings = this.fwConfig.container.get(dialog_settings_1.DefaultDialogSettings);
+            applySetter(function () { return _this._apply(); });
+        }
+        DialogConfiguration.prototype._apply = function () {
+            var _this = this;
+            this.fwConfig.transient(renderer_1.Renderer, this.renderer);
+            this.resources.forEach(function (resourceName) { return _this.fwConfig.globalResources(resources[resourceName]); });
+            if (this.cssText) {
+                aurelia_pal_1.DOM.injectStyles(this.cssText);
+            }
+        };
+        /**
+         * Selects the Aurelia conventional defaults for the dialog plugin.
+         * @return This instance.
+         */
+        DialogConfiguration.prototype.useDefaults = function () {
+            return this.useRenderer(defaultRenderer)
+                .useCSS(defaultCSSText)
+                .useStandardResources();
+        };
+        /**
+         * Exports the standard set of dialog behaviors to Aurelia's global resources.
+         * @return This instance.
+         */
+        DialogConfiguration.prototype.useStandardResources = function () {
+            return this.useResource('ux-dialog')
+                .useResource('ux-dialog-header')
+                .useResource('ux-dialog-body')
+                .useResource('ux-dialog-footer')
+                .useResource('attach-focus');
+        };
+        /**
+         * Exports the chosen dialog element or view to Aurelia's global resources.
+         * @param resourceName The name of the dialog resource to export.
+         * @return This instance.
+         */
+        DialogConfiguration.prototype.useResource = function (resourceName) {
+            this.resources.push(resourceName);
+            return this;
+        };
+        /**
+         * Configures the plugin to use a specific dialog renderer.
+         * @param renderer A type that implements the Renderer interface.
+         * @param settings Global settings for the renderer.
+         * @return This instance.
+         */
+        DialogConfiguration.prototype.useRenderer = function (renderer, settings) {
+            this.renderer = renderer;
+            if (settings) {
+                Object.assign(this.settings, settings);
+            }
+            return this;
+        };
+        /**
+         * Configures the plugin to use specific css.
+         * @param cssText The css to use in place of the default styles.
+         * @return This instance.
+         */
+        DialogConfiguration.prototype.useCSS = function (cssText) {
+            this.cssText = cssText;
+            return this;
+        };
+        return DialogConfiguration;
+    }());
+    exports.DialogConfiguration = DialogConfiguration;
+});
+
+define('aurelia-dialog/renderer',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * An abstract base class for implementors of the basic Renderer API.
+     */
+    var Renderer = (function () {
+        function Renderer() {
+        }
+        /**
+         * Gets an anchor for the ViewSlot to insert a view into.
+         * @returns A DOM element.
+         */
+        Renderer.prototype.getDialogContainer = function () {
+            throw new Error('DialogRenderer must implement getDialogContainer().');
+        };
+        /**
+         * Displays the dialog.
+         * @returns Promise A promise that resolves when the dialog has been displayed.
+         */
+        Renderer.prototype.showDialog = function (dialogController) {
+            throw new Error('DialogRenderer must implement showDialog().');
+        };
+        /**
+         * Hides the dialog.
+         * @returns Promise A promise that resolves when the dialog has been hidden.
+         */
+        Renderer.prototype.hideDialog = function (dialogController) {
+            throw new Error('DialogRenderer must implement hideDialog().');
+        };
+        return Renderer;
+    }());
+    exports.Renderer = Renderer;
+});
+
+define('aurelia-dialog/dialog-settings',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * @internal
+     */
+    var DefaultDialogSettings = (function () {
+        function DefaultDialogSettings() {
+            this.lock = true;
+            this.startingZIndex = 1000;
+            this.centerHorizontalOnly = false;
+            this.rejectOnCancel = false;
+            this.ignoreTransitions = false;
+        }
+        return DefaultDialogSettings;
+    }());
+    exports.DefaultDialogSettings = DefaultDialogSettings;
+});
+
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-define('views/data-view/data-view',["require", "exports", "aurelia-framework", "../../services/data-service"], function (require, exports, aurelia_framework_1, data_service_1) {
+define('aurelia-dialog/dialog-renderer',["require", "exports", "aurelia-pal", "aurelia-dependency-injection"], function (require, exports, aurelia_pal_1, aurelia_dependency_injection_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var DataView = (function () {
-        function DataView(dataSvc) {
-            this.dataSvc = dataSvc;
-            this.images = [];
-        }
-        DataView.prototype.searchGifs = function (event) {
-            var _this = this;
-            var data = event.data;
-            this.dataSvc.searchGifs(data).then(function (output) {
-                _this.images = [];
-                for (var _i = 0, _a = output.data; _i < _a.length; _i++) {
-                    var d = _a[_i];
-                    _this.images.push({ caption: d.caption, url: d.images.fixed_width.url });
+    var containerTagName = 'ux-dialog-container';
+    var overlayTagName = 'ux-dialog-overlay';
+    exports.transitionEvent = (function () {
+        var transition;
+        return function () {
+            if (transition) {
+                return transition;
+            }
+            var el = aurelia_pal_1.DOM.createElement('fakeelement');
+            var transitions = {
+                transition: 'transitionend',
+                OTransition: 'oTransitionEnd',
+                MozTransition: 'transitionend',
+                WebkitTransition: 'webkitTransitionEnd'
+            };
+            for (var t in transitions) {
+                if (el.style[t] !== undefined) {
+                    transition = transitions[t];
+                    return transition;
                 }
+            }
+            return '';
+        };
+    })();
+    exports.hasTransition = (function () {
+        var unprefixedName = 'transitionDuration';
+        var el = aurelia_pal_1.DOM.createElement('fakeelement');
+        var prefixedNames = ['webkitTransitionDuration', 'oTransitionDuration'];
+        var transitionDurationName;
+        if (unprefixedName in el.style) {
+            transitionDurationName = unprefixedName;
+        }
+        else {
+            transitionDurationName = prefixedNames.find(function (prefixed) { return (prefixed in el.style); });
+        }
+        return function (element) {
+            return !!transitionDurationName && !!(aurelia_pal_1.DOM.getComputedStyle(element)[transitionDurationName]
+                .split(',')
+                .find(function (duration) { return !!parseFloat(duration); }));
+        };
+    })();
+    var body = aurelia_pal_1.DOM.querySelectorAll('body')[0];
+    function getActionKey(e) {
+        if ((e.code || e.key) === 'Escape' || e.keyCode === 27) {
+            return 'Escape';
+        }
+        if ((e.code || e.key) === 'Enter' || e.keyCode === 13) {
+            return 'Enter';
+        }
+        return undefined;
+    }
+    var DialogRenderer = DialogRenderer_1 = (function () {
+        function DialogRenderer() {
+        }
+        DialogRenderer.keyboardEventHandler = function (e) {
+            var key = getActionKey(e);
+            if (!key) {
+                return;
+            }
+            var top = DialogRenderer_1.dialogControllers[DialogRenderer_1.dialogControllers.length - 1];
+            if (!top || !top.settings.keyboard) {
+                return;
+            }
+            var keyboard = top.settings.keyboard;
+            if (key === 'Escape'
+                && (keyboard === true || keyboard === key || (Array.isArray(keyboard) && keyboard.indexOf(key) > -1))) {
+                top.cancel();
+            }
+            else if (key === 'Enter' && (keyboard === key || (Array.isArray(keyboard) && keyboard.indexOf(key) > -1))) {
+                top.ok();
+            }
+        };
+        DialogRenderer.trackController = function (dialogController) {
+            if (!DialogRenderer_1.dialogControllers.length) {
+                aurelia_pal_1.DOM.addEventListener('keyup', DialogRenderer_1.keyboardEventHandler, false);
+            }
+            DialogRenderer_1.dialogControllers.push(dialogController);
+        };
+        DialogRenderer.untrackController = function (dialogController) {
+            var i = DialogRenderer_1.dialogControllers.indexOf(dialogController);
+            if (i !== -1) {
+                DialogRenderer_1.dialogControllers.splice(i, 1);
+            }
+            if (!DialogRenderer_1.dialogControllers.length) {
+                aurelia_pal_1.DOM.removeEventListener('keyup', DialogRenderer_1.keyboardEventHandler, false);
+            }
+        };
+        DialogRenderer.prototype.getOwnElements = function (parent, selector) {
+            var elements = parent.querySelectorAll(selector);
+            var own = [];
+            for (var i = 0; i < elements.length; i++) {
+                if (elements[i].parentElement === parent) {
+                    own.push(elements[i]);
+                }
+            }
+            return own;
+        };
+        DialogRenderer.prototype.attach = function (dialogController) {
+            var spacingWrapper = aurelia_pal_1.DOM.createElement('div'); // TODO: check if redundant
+            spacingWrapper.appendChild(this.anchor);
+            this.dialogContainer = aurelia_pal_1.DOM.createElement(containerTagName);
+            this.dialogContainer.appendChild(spacingWrapper);
+            this.dialogOverlay = aurelia_pal_1.DOM.createElement(overlayTagName);
+            var zIndex = typeof dialogController.settings.startingZIndex === 'number'
+                ? dialogController.settings.startingZIndex + ''
+                : null;
+            this.dialogOverlay.style.zIndex = zIndex;
+            this.dialogContainer.style.zIndex = zIndex;
+            var lastContainer = this.getOwnElements(this.host, containerTagName).pop();
+            if (lastContainer && lastContainer.parentElement) {
+                this.host.insertBefore(this.dialogContainer, lastContainer.nextSibling);
+                this.host.insertBefore(this.dialogOverlay, lastContainer.nextSibling);
+            }
+            else {
+                this.host.insertBefore(this.dialogContainer, this.host.firstChild);
+                this.host.insertBefore(this.dialogOverlay, this.host.firstChild);
+            }
+            dialogController.controller.attached();
+            this.host.classList.add('ux-dialog-open');
+        };
+        DialogRenderer.prototype.detach = function (dialogController) {
+            this.host.removeChild(this.dialogOverlay);
+            this.host.removeChild(this.dialogContainer);
+            dialogController.controller.detached();
+            if (!DialogRenderer_1.dialogControllers.length) {
+                this.host.classList.remove('ux-dialog-open');
+            }
+        };
+        DialogRenderer.prototype.setAsActive = function () {
+            this.dialogOverlay.classList.add('active');
+            this.dialogContainer.classList.add('active');
+        };
+        DialogRenderer.prototype.setAsInactive = function () {
+            this.dialogOverlay.classList.remove('active');
+            this.dialogContainer.classList.remove('active');
+        };
+        DialogRenderer.prototype.setupClickHandling = function (dialogController) {
+            this.stopPropagation = function (e) { e._aureliaDialogHostClicked = true; };
+            this.closeDialogClick = function (e) {
+                if (dialogController.settings.overlayDismiss && !e._aureliaDialogHostClicked) {
+                    dialogController.cancel();
+                }
+            };
+            this.dialogContainer.addEventListener('click', this.closeDialogClick);
+            this.anchor.addEventListener('click', this.stopPropagation);
+        };
+        DialogRenderer.prototype.clearClickHandling = function () {
+            this.dialogContainer.removeEventListener('click', this.closeDialogClick);
+            this.anchor.removeEventListener('click', this.stopPropagation);
+        };
+        DialogRenderer.prototype.centerDialog = function () {
+            var child = this.dialogContainer.children[0];
+            var vh = Math.max(aurelia_pal_1.DOM.querySelectorAll('html')[0].clientHeight, window.innerHeight || 0);
+            child.style.marginTop = Math.max((vh - child.offsetHeight) / 2, 30) + 'px';
+            child.style.marginBottom = Math.max((vh - child.offsetHeight) / 2, 30) + 'px';
+        };
+        DialogRenderer.prototype.awaitTransition = function (setActiveInactive, ignore) {
+            var _this = this;
+            return new Promise(function (resolve) {
+                var renderer = _this;
+                var eventName = exports.transitionEvent();
+                function onTransitionEnd(e) {
+                    if (e.target !== renderer.dialogContainer) {
+                        return;
+                    }
+                    renderer.dialogContainer.removeEventListener(eventName, onTransitionEnd);
+                    resolve();
+                }
+                if (ignore || !exports.hasTransition(_this.dialogContainer)) {
+                    resolve();
+                }
+                else {
+                    _this.dialogContainer.addEventListener(eventName, onTransitionEnd);
+                }
+                setActiveInactive();
             });
         };
-        return DataView;
+        DialogRenderer.prototype.getDialogContainer = function () {
+            return this.anchor || (this.anchor = aurelia_pal_1.DOM.createElement('div'));
+        };
+        DialogRenderer.prototype.showDialog = function (dialogController) {
+            var _this = this;
+            if (dialogController.settings.host) {
+                this.host = dialogController.settings.host;
+            }
+            else {
+                this.host = body;
+            }
+            var settings = dialogController.settings;
+            this.attach(dialogController);
+            if (typeof settings.position === 'function') {
+                settings.position(this.dialogContainer, this.dialogOverlay);
+            }
+            else if (!settings.centerHorizontalOnly) {
+                this.centerDialog();
+            }
+            DialogRenderer_1.trackController(dialogController);
+            this.setupClickHandling(dialogController);
+            return this.awaitTransition(function () { return _this.setAsActive(); }, dialogController.settings.ignoreTransitions);
+        };
+        DialogRenderer.prototype.hideDialog = function (dialogController) {
+            var _this = this;
+            this.clearClickHandling();
+            DialogRenderer_1.untrackController(dialogController);
+            return this.awaitTransition(function () { return _this.setAsInactive(); }, dialogController.settings.ignoreTransitions)
+                .then(function () { _this.detach(dialogController); });
+        };
+        return DialogRenderer;
     }());
-    DataView = __decorate([
-        aurelia_framework_1.inject(data_service_1.DataService),
-        __metadata("design:paramtypes", [data_service_1.DataService])
-    ], DataView);
-    exports.DataView = DataView;
+    DialogRenderer.dialogControllers = [];
+    DialogRenderer = DialogRenderer_1 = __decorate([
+        aurelia_dependency_injection_1.transient()
+    ], DialogRenderer);
+    exports.DialogRenderer = DialogRenderer;
+    var DialogRenderer_1;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+define('aurelia-dialog/ux-dialog',["require", "exports", "aurelia-templating"], function (require, exports, aurelia_templating_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var UxDialog = (function () {
+        function UxDialog() {
+        }
+        return UxDialog;
+    }());
+    UxDialog = __decorate([
+        aurelia_templating_1.customElement('ux-dialog'),
+        aurelia_templating_1.inlineView("\n  <template>\n    <slot></slot>\n  </template>\n")
+    ], UxDialog);
+    exports.UxDialog = UxDialog;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+define('aurelia-dialog/ux-dialog-header',["require", "exports", "aurelia-templating", "./dialog-controller"], function (require, exports, aurelia_templating_1, dialog_controller_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var UxDialogHeader = (function () {
+        function UxDialogHeader(controller) {
+            this.controller = controller;
+        }
+        UxDialogHeader.prototype.bind = function () {
+            if (typeof this.showCloseButton !== 'boolean') {
+                this.showCloseButton = !this.controller.settings.lock;
+            }
+        };
+        return UxDialogHeader;
+    }());
+    /**
+     * @internal
+     */
+    UxDialogHeader.inject = [dialog_controller_1.DialogController];
+    __decorate([
+        aurelia_templating_1.bindable()
+    ], UxDialogHeader.prototype, "showCloseButton", void 0);
+    UxDialogHeader = __decorate([
+        aurelia_templating_1.customElement('ux-dialog-header'),
+        aurelia_templating_1.inlineView("\n  <template>\n    <button\n      type=\"button\"\n      class=\"dialog-close\"\n      aria-label=\"Close\"\n      if.bind=\"showCloseButton\"\n      click.trigger=\"controller.cancel()\">\n      <span aria-hidden=\"true\">&times;</span>\n    </button>\n\n    <div class=\"dialog-header-content\">\n      <slot></slot>\n    </div>\n  </template>\n")
+    ], UxDialogHeader);
+    exports.UxDialogHeader = UxDialogHeader;
+});
+
+define('aurelia-dialog/dialog-controller',["require", "exports", "./renderer", "./lifecycle", "./dialog-cancel-error"], function (require, exports, renderer_1, lifecycle_1, dialog_cancel_error_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * A controller object for a Dialog instance.
+     */
+    var DialogController = (function () {
+        /**
+         * Creates an instance of DialogController.
+         */
+        function DialogController(renderer, settings, resolve, reject) {
+            this.resolve = resolve;
+            this.reject = reject;
+            this.settings = settings;
+            this.renderer = renderer;
+        }
+        /**
+         * @internal
+         */
+        DialogController.prototype.releaseResources = function () {
+            var _this = this;
+            return lifecycle_1.invokeLifecycle(this.controller.viewModel || {}, 'deactivate')
+                .then(function () { return _this.renderer.hideDialog(_this); })
+                .then(function () { _this.controller.unbind(); });
+        };
+        /**
+         * @internal
+         */
+        DialogController.prototype.cancelOperation = function () {
+            if (!this.settings.rejectOnCancel) {
+                return { wasCancelled: true };
+            }
+            throw dialog_cancel_error_1.createDialogCancelError();
+        };
+        /**
+         * Closes the dialog with a successful output.
+         * @param output The returned success output.
+         */
+        DialogController.prototype.ok = function (output) {
+            return this.close(true, output);
+        };
+        /**
+         * Closes the dialog with a cancel output.
+         * @param output The returned cancel output.
+         */
+        DialogController.prototype.cancel = function (output) {
+            return this.close(false, output);
+        };
+        /**
+         * Closes the dialog with an error result.
+         * @param message An error message.
+         * @returns Promise An empty promise object.
+         */
+        DialogController.prototype.error = function (message) {
+            var _this = this;
+            return this.releaseResources().then(function () { _this.reject(message); });
+        };
+        /**
+         * Closes the dialog.
+         * @param ok Whether or not the user input signified success.
+         * @param output The specified output.
+         * @returns Promise An empty promise object.
+         */
+        DialogController.prototype.close = function (ok, output) {
+            var _this = this;
+            if (this.closePromise) {
+                return this.closePromise;
+            }
+            return this.closePromise = lifecycle_1.invokeLifecycle(this.controller.viewModel || {}, 'canDeactivate').catch(function (reason) {
+                _this.closePromise = undefined;
+                return Promise.reject(reason);
+            }).then(function (canDeactivate) {
+                if (!canDeactivate) {
+                    _this.closePromise = undefined; // we are done, do not block consecutive calls
+                    return _this.cancelOperation();
+                }
+                return _this.releaseResources().then(function () {
+                    if (!_this.settings.rejectOnCancel || ok) {
+                        _this.resolve({ wasCancelled: !ok, output: output });
+                    }
+                    else {
+                        _this.reject(dialog_cancel_error_1.createDialogCancelError(output));
+                    }
+                    return { wasCancelled: false };
+                }).catch(function (reason) {
+                    _this.closePromise = undefined;
+                    return Promise.reject(reason);
+                });
+            });
+        };
+        return DialogController;
+    }());
+    /**
+     * @internal
+     */
+    DialogController.inject = [renderer_1.Renderer];
+    exports.DialogController = DialogController;
+});
+
+define('aurelia-dialog/lifecycle',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * Call a lifecycle method on a viewModel if it exists.
+     * @function
+     * @param instance The viewModel instance.
+     * @param name The lifecycle method name.
+     * @param model The model to pass to the lifecycle method.
+     * @returns Promise The result of the lifecycle method.
+     */
+    function invokeLifecycle(instance, name, model) {
+        if (typeof instance[name] === 'function') {
+            return new Promise(function (resolve) {
+                resolve(instance[name](model));
+            }).then(function (result) {
+                if (result !== null && result !== undefined) {
+                    return result;
+                }
+                return true;
+            });
+        }
+        return Promise.resolve(true);
+    }
+    exports.invokeLifecycle = invokeLifecycle;
+});
+
+define('aurelia-dialog/dialog-cancel-error',["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * @internal
+     */
+    function createDialogCancelError(output) {
+        var error = new Error('Operation cancelled.');
+        error.wasCancelled = true;
+        error.output = output;
+        return error;
+    }
+    exports.createDialogCancelError = createDialogCancelError;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+define('aurelia-dialog/ux-dialog-body',["require", "exports", "aurelia-templating"], function (require, exports, aurelia_templating_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var UxDialogBody = (function () {
+        function UxDialogBody() {
+        }
+        return UxDialogBody;
+    }());
+    UxDialogBody = __decorate([
+        aurelia_templating_1.customElement('ux-dialog-body'),
+        aurelia_templating_1.inlineView("\n  <template>\n    <slot></slot>\n  </template>\n")
+    ], UxDialogBody);
+    exports.UxDialogBody = UxDialogBody;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+define('aurelia-dialog/ux-dialog-footer',["require", "exports", "aurelia-templating", "./dialog-controller"], function (require, exports, aurelia_templating_1, dialog_controller_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /**
+     * View-model for footer of Dialog.
+     */
+    var UxDialogFooter = UxDialogFooter_1 = (function () {
+        function UxDialogFooter(controller) {
+            this.controller = controller;
+            this.buttons = [];
+            this.useDefaultButtons = false;
+        }
+        UxDialogFooter.isCancelButton = function (value) {
+            return value === 'Cancel';
+        };
+        UxDialogFooter.prototype.close = function (buttonValue) {
+            if (UxDialogFooter_1.isCancelButton(buttonValue)) {
+                this.controller.cancel(buttonValue);
+            }
+            else {
+                this.controller.ok(buttonValue);
+            }
+        };
+        UxDialogFooter.prototype.useDefaultButtonsChanged = function (newValue) {
+            if (newValue) {
+                this.buttons = ['Cancel', 'Ok'];
+            }
+        };
+        return UxDialogFooter;
+    }());
+    /**
+     * @internal
+     */
+    UxDialogFooter.inject = [dialog_controller_1.DialogController];
+    __decorate([
+        aurelia_templating_1.bindable
+    ], UxDialogFooter.prototype, "buttons", void 0);
+    __decorate([
+        aurelia_templating_1.bindable
+    ], UxDialogFooter.prototype, "useDefaultButtons", void 0);
+    UxDialogFooter = UxDialogFooter_1 = __decorate([
+        aurelia_templating_1.customElement('ux-dialog-footer'),
+        aurelia_templating_1.inlineView("\n  <template>\n    <slot></slot>\n    <template if.bind=\"buttons.length > 0\">\n      <button type=\"button\"\n        class=\"btn btn-default\"\n        repeat.for=\"button of buttons\"\n        click.trigger=\"close(button)\">\n        ${button}\n      </button>\n    </template>\n  </template>\n")
+    ], UxDialogFooter);
+    exports.UxDialogFooter = UxDialogFooter;
+    var UxDialogFooter_1;
+});
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+define('aurelia-dialog/attach-focus',["require", "exports", "aurelia-templating", "aurelia-pal"], function (require, exports, aurelia_templating_1, aurelia_pal_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var AttachFocus = (function () {
+        function AttachFocus(element) {
+            this.element = element;
+            this.value = true;
+        }
+        AttachFocus.prototype.attached = function () {
+            if (this.value && this.value !== 'false') {
+                this.element.focus();
+            }
+        };
+        AttachFocus.prototype.valueChanged = function (newValue) {
+            this.value = newValue;
+        };
+        return AttachFocus;
+    }());
+    /**
+     * @internal
+     */
+    AttachFocus.inject = [aurelia_pal_1.DOM.Element];
+    AttachFocus = __decorate([
+        aurelia_templating_1.customAttribute('attach-focus')
+    ], AttachFocus);
+    exports.AttachFocus = AttachFocus;
+});
+
+define('aurelia-dialog/dialog-service',["require", "exports", "aurelia-dependency-injection", "aurelia-metadata", "aurelia-templating", "./dialog-settings", "./dialog-cancel-error", "./lifecycle", "./dialog-controller"], function (require, exports, aurelia_dependency_injection_1, aurelia_metadata_1, aurelia_templating_1, dialog_settings_1, dialog_cancel_error_1, lifecycle_1, dialog_controller_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    /* tslint:enable:max-line-length */
+    function whenClosed(onfulfilled, onrejected) {
+        return this.then(function (r) { return r.wasCancelled ? r : r.closeResult; }).then(onfulfilled, onrejected);
+    }
+    function asDialogOpenPromise(promise) {
+        promise.whenClosed = whenClosed;
+        return promise;
+    }
+    /**
+     * A service allowing for the creation of dialogs.
+     */
+    var DialogService = (function () {
+        function DialogService(container, compositionEngine, defaultSettings) {
+            /**
+             * The current dialog controllers
+             */
+            this.controllers = [];
+            /**
+             * Is there an open dialog
+             */
+            this.hasOpenDialog = false;
+            this.hasActiveDialog = false;
+            this.container = container;
+            this.compositionEngine = compositionEngine;
+            this.defaultSettings = defaultSettings;
+        }
+        DialogService.prototype.validateSettings = function (settings) {
+            if (!settings.viewModel && !settings.view) {
+                throw new Error('Invalid Dialog Settings. You must provide "viewModel", "view" or both.');
+            }
+        };
+        // tslint:disable-next-line:max-line-length
+        DialogService.prototype.createCompositionContext = function (childContainer, host, settings) {
+            return {
+                container: childContainer.parent,
+                childContainer: childContainer,
+                bindingContext: null,
+                viewResources: null,
+                model: settings.model,
+                view: settings.view,
+                viewModel: settings.viewModel,
+                viewSlot: new aurelia_templating_1.ViewSlot(host, true),
+                host: host
+            };
+        };
+        DialogService.prototype.ensureViewModel = function (compositionContext) {
+            if (typeof compositionContext.viewModel === 'function') {
+                compositionContext.viewModel = aurelia_metadata_1.Origin.get(compositionContext.viewModel).moduleId;
+            }
+            if (typeof compositionContext.viewModel === 'string') {
+                return this.compositionEngine.ensureViewModel(compositionContext);
+            }
+            return Promise.resolve(compositionContext);
+        };
+        DialogService.prototype._cancelOperation = function (rejectOnCancel) {
+            if (!rejectOnCancel) {
+                return { wasCancelled: true };
+            }
+            throw dialog_cancel_error_1.createDialogCancelError();
+        };
+        // tslint:disable-next-line:max-line-length
+        DialogService.prototype.composeAndShowDialog = function (compositionContext, dialogController) {
+            var _this = this;
+            if (!compositionContext.viewModel) {
+                // provide access to the dialog controller for view only dialogs
+                compositionContext.bindingContext = { controller: dialogController };
+            }
+            return this.compositionEngine.compose(compositionContext).then(function (controller) {
+                dialogController.controller = controller;
+                return dialogController.renderer.showDialog(dialogController).then(function () {
+                    _this.controllers.push(dialogController);
+                    _this.hasActiveDialog = _this.hasOpenDialog = !!_this.controllers.length;
+                }, function (reason) {
+                    if (controller.viewModel) {
+                        lifecycle_1.invokeLifecycle(controller.viewModel, 'deactivate');
+                    }
+                    return Promise.reject(reason);
+                });
+            });
+        };
+        /**
+         * @internal
+         */
+        DialogService.prototype.createSettings = function (settings) {
+            settings = Object.assign({}, this.defaultSettings, settings);
+            if (typeof settings.keyboard !== 'boolean' && !settings.keyboard) {
+                settings.keyboard = !settings.lock;
+            }
+            if (typeof settings.overlayDismiss !== 'boolean') {
+                settings.overlayDismiss = !settings.lock;
+            }
+            Object.defineProperty(settings, 'rejectOnCancel', {
+                writable: false,
+                configurable: true,
+                enumerable: true
+            });
+            this.validateSettings(settings);
+            return settings;
+        };
+        DialogService.prototype.open = function (settings) {
+            var _this = this;
+            if (settings === void 0) { settings = {}; }
+            // tslint:enable:max-line-length
+            settings = this.createSettings(settings);
+            var childContainer = settings.childContainer || this.container.createChild();
+            var resolveCloseResult;
+            var rejectCloseResult;
+            var closeResult = new Promise(function (resolve, reject) {
+                resolveCloseResult = resolve;
+                rejectCloseResult = reject;
+            });
+            var dialogController = childContainer.invoke(dialog_controller_1.DialogController, [settings, resolveCloseResult, rejectCloseResult]);
+            childContainer.registerInstance(dialog_controller_1.DialogController, dialogController);
+            closeResult.then(function () {
+                removeController(_this, dialogController);
+            }, function () {
+                removeController(_this, dialogController);
+            });
+            var compositionContext = this.createCompositionContext(childContainer, dialogController.renderer.getDialogContainer(), dialogController.settings);
+            var openResult = this.ensureViewModel(compositionContext).then(function (compositionContext) {
+                if (!compositionContext.viewModel) {
+                    return true;
+                }
+                return lifecycle_1.invokeLifecycle(compositionContext.viewModel, 'canActivate', dialogController.settings.model);
+            }).then(function (canActivate) {
+                if (!canActivate) {
+                    return _this._cancelOperation(dialogController.settings.rejectOnCancel);
+                }
+                // if activation granted, compose and show
+                return _this.composeAndShowDialog(compositionContext, dialogController)
+                    .then(function () { return ({ controller: dialogController, closeResult: closeResult, wasCancelled: false }); });
+            });
+            return asDialogOpenPromise(openResult);
+        };
+        /**
+         * Closes all open dialogs at the time of invocation.
+         * @return Promise<DialogController[]> All controllers whose close operation was cancelled.
+         */
+        DialogService.prototype.closeAll = function () {
+            return Promise.all(this.controllers.slice(0).map(function (controller) {
+                if (!controller.settings.rejectOnCancel) {
+                    return controller.cancel().then(function (result) {
+                        if (result.wasCancelled) {
+                            return controller;
+                        }
+                        return;
+                    });
+                }
+                return controller.cancel().then(function () { return; }).catch(function (reason) {
+                    if (reason.wasCancelled) {
+                        return controller;
+                    }
+                    return Promise.reject(reason);
+                });
+            })).then(function (unclosedControllers) { return unclosedControllers.filter(function (unclosed) { return !!unclosed; }); });
+        };
+        return DialogService;
+    }());
+    /**
+     * @internal
+     */
+    DialogService.inject = [aurelia_dependency_injection_1.Container, aurelia_templating_1.CompositionEngine, dialog_settings_1.DefaultDialogSettings];
+    exports.DialogService = DialogService;
+    function removeController(service, dialogController) {
+        var i = service.controllers.indexOf(dialogController);
+        if (i !== -1) {
+            service.controllers.splice(i, 1);
+            service.hasActiveDialog = service.hasOpenDialog = !!service.controllers.length;
+        }
+    }
 });
 
 define('aurelia-validation/get-target-dom-element',["require", "exports", "aurelia-pal"], function (require, exports, aurelia_pal_1) {
@@ -1987,13 +2944,15 @@ define('aurelia-validation/implementation/validation-rules',["require", "exports
 });
 
 define('text!app.html', ['module'], function(module) { module.exports = "<template>\n  <h1>${message}</h1>\n\n  <nav>\n    <ul>\n      <li repeat.for=\"row of router.navigation\">\n        <a href.bind=\"row.href\">${row.title}</a>\n      </li>\n    <ul>\n  </nav>\n\n  <router-view></router-view>\n</template>\n"; });
-define('text!components/spinner/spinner.css', ['module'], function(module) { module.exports = "/* spinner-circles */\r\n.spinner-circles {\r\n  width: 40px;\r\n  height: 40px;\r\n\r\n  position: relative;\r\n  margin: 100px auto;\r\n}\r\n\r\n.double-bounce1, .double-bounce2 {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 50%;\r\n  background-color: #fff;\r\n  opacity: 0.6;\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n\r\n  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;\r\n  animation: sk-bounce 2.0s infinite ease-in-out;\r\n}\r\n\r\n.double-bounce2 {\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n@-webkit-keyframes sk-bounce {\r\n  0%, 100% { -webkit-transform: scale(0.0) }\r\n  50% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bounce {\r\n  0%, 100% {\r\n    transform: scale(0.0);\r\n    -webkit-transform: scale(0.0);\r\n  } 50% {\r\n      transform: scale(1.0);\r\n      -webkit-transform: scale(1.0);\r\n    }\r\n}\r\n\r\n\r\n/* folding-cube */\r\n.sk-folding-cube {\r\n  margin: 20px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n  -webkit-transform: rotateZ(45deg);\r\n          transform: rotateZ(45deg);\r\n}\r\n\r\n.sk-folding-cube .sk-cube {\r\n  float: left;\r\n  width: 50%;\r\n  height: 50%;\r\n  position: relative;\r\n  -webkit-transform: scale(1.1);\r\n      -ms-transform: scale(1.1);\r\n          transform: scale(1.1); \r\n}\r\n.sk-folding-cube .sk-cube:before {\r\n  content: '';\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  background-color: #fff;\r\n  -webkit-animation: sk-foldCubeAngle 2.4s infinite linear both;\r\n          animation: sk-foldCubeAngle 2.4s infinite linear both;\r\n  -webkit-transform-origin: 100% 100%;\r\n      -ms-transform-origin: 100% 100%;\r\n          transform-origin: 100% 100%;\r\n}\r\n.sk-folding-cube .sk-cube2 {\r\n  -webkit-transform: scale(1.1) rotateZ(90deg);\r\n          transform: scale(1.1) rotateZ(90deg);\r\n}\r\n.sk-folding-cube .sk-cube3 {\r\n  -webkit-transform: scale(1.1) rotateZ(180deg);\r\n          transform: scale(1.1) rotateZ(180deg);\r\n}\r\n.sk-folding-cube .sk-cube4 {\r\n  -webkit-transform: scale(1.1) rotateZ(270deg);\r\n          transform: scale(1.1) rotateZ(270deg);\r\n}\r\n.sk-folding-cube .sk-cube2:before {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s;\r\n}\r\n.sk-folding-cube .sk-cube3:before {\r\n  -webkit-animation-delay: 0.6s;\r\n          animation-delay: 0.6s; \r\n}\r\n.sk-folding-cube .sk-cube4:before {\r\n  -webkit-animation-delay: 0.9s;\r\n          animation-delay: 0.9s;\r\n}\r\n@-webkit-keyframes sk-foldCubeAngle {\r\n  0%, 10% {\r\n    -webkit-transform: perspective(140px) rotateX(-180deg);\r\n            transform: perspective(140px) rotateX(-180deg);\r\n    opacity: 0; \r\n  } 25%, 75% {\r\n    -webkit-transform: perspective(140px) rotateX(0deg);\r\n            transform: perspective(140px) rotateX(0deg);\r\n    opacity: 1; \r\n  } 90%, 100% {\r\n    -webkit-transform: perspective(140px) rotateY(180deg);\r\n            transform: perspective(140px) rotateY(180deg);\r\n    opacity: 0; \r\n  } \r\n}\r\n\r\n@keyframes sk-foldCubeAngle {\r\n  0%, 10% {\r\n    -webkit-transform: perspective(140px) rotateX(-180deg);\r\n            transform: perspective(140px) rotateX(-180deg);\r\n    opacity: 0; \r\n  } 25%, 75% {\r\n    -webkit-transform: perspective(140px) rotateX(0deg);\r\n            transform: perspective(140px) rotateX(0deg);\r\n    opacity: 1; \r\n  } 90%, 100% {\r\n    -webkit-transform: perspective(140px) rotateY(180deg);\r\n            transform: perspective(140px) rotateY(180deg);\r\n    opacity: 0; \r\n  }\r\n}\r\n\r\n\r\n/* cube-grid */\r\n.sk-cube-grid {\r\n  width: 40px;\r\n  height: 40px;\r\n  margin: 100px auto;\r\n}\r\n\r\n.sk-cube-grid .sk-cube {\r\n  width: 33%;\r\n  height: 33%;\r\n  background-color: #fff;\r\n  float: left;\r\n  -webkit-animation: sk-cubeGridScaleDelay 1.3s infinite ease-in-out;\r\n          animation: sk-cubeGridScaleDelay 1.3s infinite ease-in-out; \r\n}\r\n.sk-cube-grid .sk-cube1 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n.sk-cube-grid .sk-cube2 {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s; }\r\n.sk-cube-grid .sk-cube3 {\r\n  -webkit-animation-delay: 0.4s;\r\n          animation-delay: 0.4s; }\r\n.sk-cube-grid .sk-cube4 {\r\n  -webkit-animation-delay: 0.1s;\r\n          animation-delay: 0.1s; }\r\n.sk-cube-grid .sk-cube5 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n.sk-cube-grid .sk-cube6 {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s; }\r\n.sk-cube-grid .sk-cube7 {\r\n  -webkit-animation-delay: 0s;\r\n          animation-delay: 0s; }\r\n.sk-cube-grid .sk-cube8 {\r\n  -webkit-animation-delay: 0.1s;\r\n          animation-delay: 0.1s; }\r\n.sk-cube-grid .sk-cube9 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n\r\n@-webkit-keyframes sk-cubeGridScaleDelay {\r\n  0%, 70%, 100% {\r\n    -webkit-transform: scale3D(1, 1, 1);\r\n            transform: scale3D(1, 1, 1);\r\n  } 35% {\r\n    -webkit-transform: scale3D(0, 0, 1);\r\n            transform: scale3D(0, 0, 1); \r\n  }\r\n}\r\n\r\n@keyframes sk-cubeGridScaleDelay {\r\n  0%, 70%, 100% {\r\n    -webkit-transform: scale3D(1, 1, 1);\r\n            transform: scale3D(1, 1, 1);\r\n  } 35% {\r\n    -webkit-transform: scale3D(0, 0, 1);\r\n            transform: scale3D(0, 0, 1);\r\n  } \r\n}\r\n\r\n\r\n/* circle */\r\n.sk-circle {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n.sk-circle .sk-child {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n}\r\n.sk-circle .sk-child:before {\r\n  content: '';\r\n  display: block;\r\n  margin: 0 auto;\r\n  width: 15%;\r\n  height: 15%;\r\n  background-color: #fff;\r\n  border-radius: 100%;\r\n  -webkit-animation: sk-circleBounceDelay 1.2s infinite ease-in-out both;\r\n          animation: sk-circleBounceDelay 1.2s infinite ease-in-out both;\r\n}\r\n.sk-circle .sk-circle2 {\r\n  -webkit-transform: rotate(30deg);\r\n      -ms-transform: rotate(30deg);\r\n          transform: rotate(30deg); }\r\n.sk-circle .sk-circle3 {\r\n  -webkit-transform: rotate(60deg);\r\n      -ms-transform: rotate(60deg);\r\n          transform: rotate(60deg); }\r\n.sk-circle .sk-circle4 {\r\n  -webkit-transform: rotate(90deg);\r\n      -ms-transform: rotate(90deg);\r\n          transform: rotate(90deg); }\r\n.sk-circle .sk-circle5 {\r\n  -webkit-transform: rotate(120deg);\r\n      -ms-transform: rotate(120deg);\r\n          transform: rotate(120deg); }\r\n.sk-circle .sk-circle6 {\r\n  -webkit-transform: rotate(150deg);\r\n      -ms-transform: rotate(150deg);\r\n          transform: rotate(150deg); }\r\n.sk-circle .sk-circle7 {\r\n  -webkit-transform: rotate(180deg);\r\n      -ms-transform: rotate(180deg);\r\n          transform: rotate(180deg); }\r\n.sk-circle .sk-circle8 {\r\n  -webkit-transform: rotate(210deg);\r\n      -ms-transform: rotate(210deg);\r\n          transform: rotate(210deg); }\r\n.sk-circle .sk-circle9 {\r\n  -webkit-transform: rotate(240deg);\r\n      -ms-transform: rotate(240deg);\r\n          transform: rotate(240deg); }\r\n.sk-circle .sk-circle10 {\r\n  -webkit-transform: rotate(270deg);\r\n      -ms-transform: rotate(270deg);\r\n          transform: rotate(270deg); }\r\n.sk-circle .sk-circle11 {\r\n  -webkit-transform: rotate(300deg);\r\n      -ms-transform: rotate(300deg);\r\n          transform: rotate(300deg); }\r\n.sk-circle .sk-circle12 {\r\n  -webkit-transform: rotate(330deg);\r\n      -ms-transform: rotate(330deg);\r\n          transform: rotate(330deg); }\r\n.sk-circle .sk-circle2:before {\r\n  -webkit-animation-delay: -1.1s;\r\n          animation-delay: -1.1s; }\r\n.sk-circle .sk-circle3:before {\r\n  -webkit-animation-delay: -1s;\r\n          animation-delay: -1s; }\r\n.sk-circle .sk-circle4:before {\r\n  -webkit-animation-delay: -0.9s;\r\n          animation-delay: -0.9s; }\r\n.sk-circle .sk-circle5:before {\r\n  -webkit-animation-delay: -0.8s;\r\n          animation-delay: -0.8s; }\r\n.sk-circle .sk-circle6:before {\r\n  -webkit-animation-delay: -0.7s;\r\n          animation-delay: -0.7s; }\r\n.sk-circle .sk-circle7:before {\r\n  -webkit-animation-delay: -0.6s;\r\n          animation-delay: -0.6s; }\r\n.sk-circle .sk-circle8:before {\r\n  -webkit-animation-delay: -0.5s;\r\n          animation-delay: -0.5s; }\r\n.sk-circle .sk-circle9:before {\r\n  -webkit-animation-delay: -0.4s;\r\n          animation-delay: -0.4s; }\r\n.sk-circle .sk-circle10:before {\r\n  -webkit-animation-delay: -0.3s;\r\n          animation-delay: -0.3s; }\r\n.sk-circle .sk-circle11:before {\r\n  -webkit-animation-delay: -0.2s;\r\n          animation-delay: -0.2s; }\r\n.sk-circle .sk-circle12:before {\r\n  -webkit-animation-delay: -0.1s;\r\n          animation-delay: -0.1s; }\r\n\r\n@-webkit-keyframes sk-circleBounceDelay {\r\n  0%, 80%, 100% {\r\n    -webkit-transform: scale(0);\r\n            transform: scale(0);\r\n  } 40% {\r\n    -webkit-transform: scale(1);\r\n            transform: scale(1);\r\n  }\r\n}\r\n\r\n@keyframes sk-circleBounceDelay {\r\n  0%, 80%, 100% {\r\n    -webkit-transform: scale(0);\r\n            transform: scale(0);\r\n  } 40% {\r\n    -webkit-transform: scale(1);\r\n            transform: scale(1);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-rects */\r\n.spinner-rects {\r\n  margin: 100px auto;\r\n  width: 50px;\r\n  height: 40px;\r\n  text-align: center;\r\n  font-size: 10px;\r\n}\r\n\r\n.spinner-rects > div {\r\n  background-color: #fff;\r\n  height: 100%;\r\n  width: 6px;\r\n  display: inline-block;\r\n  \r\n  -webkit-animation: sk-stretchdelay 1.2s infinite ease-in-out;\r\n  animation: sk-stretchdelay 1.2s infinite ease-in-out;\r\n}\r\n\r\n.spinner-rects .rect2 {\r\n  -webkit-animation-delay: -1.1s;\r\n  animation-delay: -1.1s;\r\n}\r\n\r\n.spinner-rects .rect3 {\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n.spinner-rects .rect4 {\r\n  -webkit-animation-delay: -0.9s;\r\n  animation-delay: -0.9s;\r\n}\r\n\r\n.spinner-rects .rect5 {\r\n  -webkit-animation-delay: -0.8s;\r\n  animation-delay: -0.8s;\r\n}\r\n\r\n@-webkit-keyframes sk-stretchdelay {\r\n  0%, 40%, 100% { -webkit-transform: scaleY(0.4) }  \r\n  20% { -webkit-transform: scaleY(1.0) }\r\n}\r\n\r\n@keyframes sk-stretchdelay {\r\n  0%, 40%, 100% { \r\n    transform: scaleY(0.4);\r\n    -webkit-transform: scaleY(0.4);\r\n  }  20% { \r\n    transform: scaleY(1.0);\r\n    -webkit-transform: scaleY(1.0);\r\n  }\r\n}\r\n\r\n/* spinner-cubes */\r\n.spinner-cubes {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n\r\n.cube1, .cube2 {\r\n  background-color: #fff;\r\n  width: 15px;\r\n  height: 15px;\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  \r\n  -webkit-animation: sk-cubemove 1.8s infinite ease-in-out;\r\n  animation: sk-cubemove 1.8s infinite ease-in-out;\r\n}\r\n\r\n.cube2 {\r\n  -webkit-animation-delay: -0.9s;\r\n  animation-delay: -0.9s;\r\n}\r\n\r\n@-webkit-keyframes sk-cubemove {\r\n  25% { -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5) }\r\n  50% { -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg) }\r\n  75% { -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5) }\r\n  100% { -webkit-transform: rotate(-360deg) }\r\n}\r\n\r\n@keyframes sk-cubemove {\r\n  25% { \r\n    transform: translateX(42px) rotate(-90deg) scale(0.5);\r\n    -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5);\r\n  } 50% { \r\n    transform: translateX(42px) translateY(42px) rotate(-179deg);\r\n    -webkit-transform: translateX(42px) translateY(42px) rotate(-179deg);\r\n  } 50.1% { \r\n    transform: translateX(42px) translateY(42px) rotate(-180deg);\r\n    -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg);\r\n  } 75% { \r\n    transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);\r\n    -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);\r\n  } 100% { \r\n    transform: rotate(-360deg);\r\n    -webkit-transform: rotate(-360deg);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-scaleout */\r\n\r\n.spinner-scaleout {\r\n  width: 40px;\r\n  height: 40px;\r\n  margin: 100px auto;\r\n  background-color: #fff;\r\n\r\n  border-radius: 100%;  \r\n  -webkit-animation: sk-scaleout 1.0s infinite ease-in-out;\r\n  animation: sk-scaleout 1.0s infinite ease-in-out;\r\n}\r\n\r\n@-webkit-keyframes sk-scaleout {\r\n  0% { -webkit-transform: scale(0) }\r\n  100% {\r\n    -webkit-transform: scale(1.0);\r\n    opacity: 0;\r\n  }\r\n}\r\n\r\n@keyframes sk-scaleout {\r\n  0% { \r\n    -webkit-transform: scale(0);\r\n    transform: scale(0);\r\n  } 100% {\r\n    -webkit-transform: scale(1.0);\r\n    transform: scale(1.0);\r\n    opacity: 0;\r\n  }\r\n}\r\n\r\n\r\n/* spinner-dots */\r\n\r\n.spinner-dots {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n  text-align: center;\r\n  \r\n  -webkit-animation: sk-rotate 2.0s infinite linear;\r\n  animation: sk-rotate 2.0s infinite linear;\r\n}\r\n\r\n.dot1, .dot2 {\r\n  width: 60%;\r\n  height: 60%;\r\n  display: inline-block;\r\n  position: absolute;\r\n  top: 0;\r\n  background-color: #fff;\r\n  border-radius: 100%;\r\n  \r\n  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;\r\n  animation: sk-bounce 2.0s infinite ease-in-out;\r\n}\r\n\r\n.dot2 {\r\n  top: auto;\r\n  bottom: 0;\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n@-webkit-keyframes sk-rotate { 100% { -webkit-transform: rotate(360deg) }}\r\n@keyframes sk-rotate { 100% { transform: rotate(360deg); -webkit-transform: rotate(360deg) }}\r\n\r\n@-webkit-keyframes sk-bounce {\r\n  0%, 100% { -webkit-transform: scale(0.0) }\r\n  50% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bounce {\r\n  0%, 100% { \r\n    transform: scale(0.0);\r\n    -webkit-transform: scale(0.0);\r\n  } 50% { \r\n    transform: scale(1.0);\r\n    -webkit-transform: scale(1.0);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-bounce */\r\n\r\n.spinner-bounce {\r\n  margin: 100px auto 0;\r\n  width: 70px;\r\n  text-align: center;\r\n}\r\n\r\n.spinner-bounce > div {\r\n  width: 18px;\r\n  height: 18px;\r\n  background-color: #fff;\r\n\r\n  border-radius: 100%;\r\n  display: inline-block;\r\n  -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;\r\n  animation: sk-bouncedelay 1.4s infinite ease-in-out both;\r\n}\r\n\r\n.spinner-bounce .bounce1 {\r\n  -webkit-animation-delay: -0.32s;\r\n  animation-delay: -0.32s;\r\n}\r\n\r\n.spinner-bounce .bounce2 {\r\n  -webkit-animation-delay: -0.16s;\r\n  animation-delay: -0.16s;\r\n}\r\n\r\n@-webkit-keyframes sk-bouncedelay {\r\n  0%, 80%, 100% { -webkit-transform: scale(0) }\r\n  40% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bouncedelay {\r\n  0%, 80%, 100% { \r\n    -webkit-transform: scale(0);\r\n    transform: scale(0);\r\n  } 40% { \r\n    -webkit-transform: scale(1.0);\r\n    transform: scale(1.0);\r\n  }\r\n}\r\n\r\n/* spinner-fading-circle */\r\n\r\n.sk-fading-circle {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n\r\n.sk-fading-circle .sk-circle {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n}\r\n\r\n.sk-fading-circle .sk-circle:before {\r\n  content: '';\r\n  display: block;\r\n  margin: 0 auto;\r\n  width: 15%;\r\n  height: 15%;\r\n  background-color: #fff;\r\n  border-radius: 100%;\r\n  -webkit-animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;\r\n          animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;\r\n}\r\n.sk-fading-circle .sk-circle2 {\r\n  -webkit-transform: rotate(30deg);\r\n      -ms-transform: rotate(30deg);\r\n          transform: rotate(30deg);\r\n}\r\n.sk-fading-circle .sk-circle3 {\r\n  -webkit-transform: rotate(60deg);\r\n      -ms-transform: rotate(60deg);\r\n          transform: rotate(60deg);\r\n}\r\n.sk-fading-circle .sk-circle4 {\r\n  -webkit-transform: rotate(90deg);\r\n      -ms-transform: rotate(90deg);\r\n          transform: rotate(90deg);\r\n}\r\n.sk-fading-circle .sk-circle5 {\r\n  -webkit-transform: rotate(120deg);\r\n      -ms-transform: rotate(120deg);\r\n          transform: rotate(120deg);\r\n}\r\n.sk-fading-circle .sk-circle6 {\r\n  -webkit-transform: rotate(150deg);\r\n      -ms-transform: rotate(150deg);\r\n          transform: rotate(150deg);\r\n}\r\n.sk-fading-circle .sk-circle7 {\r\n  -webkit-transform: rotate(180deg);\r\n      -ms-transform: rotate(180deg);\r\n          transform: rotate(180deg);\r\n}\r\n.sk-fading-circle .sk-circle8 {\r\n  -webkit-transform: rotate(210deg);\r\n      -ms-transform: rotate(210deg);\r\n          transform: rotate(210deg);\r\n}\r\n.sk-fading-circle .sk-circle9 {\r\n  -webkit-transform: rotate(240deg);\r\n      -ms-transform: rotate(240deg);\r\n          transform: rotate(240deg);\r\n}\r\n.sk-fading-circle .sk-circle10 {\r\n  -webkit-transform: rotate(270deg);\r\n      -ms-transform: rotate(270deg);\r\n          transform: rotate(270deg);\r\n}\r\n.sk-fading-circle .sk-circle11 {\r\n  -webkit-transform: rotate(300deg);\r\n      -ms-transform: rotate(300deg);\r\n          transform: rotate(300deg); \r\n}\r\n.sk-fading-circle .sk-circle12 {\r\n  -webkit-transform: rotate(330deg);\r\n      -ms-transform: rotate(330deg);\r\n          transform: rotate(330deg); \r\n}\r\n.sk-fading-circle .sk-circle2:before {\r\n  -webkit-animation-delay: -1.1s;\r\n          animation-delay: -1.1s; \r\n}\r\n.sk-fading-circle .sk-circle3:before {\r\n  -webkit-animation-delay: -1s;\r\n          animation-delay: -1s; \r\n}\r\n.sk-fading-circle .sk-circle4:before {\r\n  -webkit-animation-delay: -0.9s;\r\n          animation-delay: -0.9s; \r\n}\r\n.sk-fading-circle .sk-circle5:before {\r\n  -webkit-animation-delay: -0.8s;\r\n          animation-delay: -0.8s; \r\n}\r\n.sk-fading-circle .sk-circle6:before {\r\n  -webkit-animation-delay: -0.7s;\r\n          animation-delay: -0.7s; \r\n}\r\n.sk-fading-circle .sk-circle7:before {\r\n  -webkit-animation-delay: -0.6s;\r\n          animation-delay: -0.6s; \r\n}\r\n.sk-fading-circle .sk-circle8:before {\r\n  -webkit-animation-delay: -0.5s;\r\n          animation-delay: -0.5s; \r\n}\r\n.sk-fading-circle .sk-circle9:before {\r\n  -webkit-animation-delay: -0.4s;\r\n          animation-delay: -0.4s;\r\n}\r\n.sk-fading-circle .sk-circle10:before {\r\n  -webkit-animation-delay: -0.3s;\r\n          animation-delay: -0.3s;\r\n}\r\n.sk-fading-circle .sk-circle11:before {\r\n  -webkit-animation-delay: -0.2s;\r\n          animation-delay: -0.2s;\r\n}\r\n.sk-fading-circle .sk-circle12:before {\r\n  -webkit-animation-delay: -0.1s;\r\n          animation-delay: -0.1s;\r\n}\r\n\r\n@-webkit-keyframes sk-circleFadeDelay {\r\n  0%, 39%, 100% { opacity: 0; }\r\n  40% { opacity: 1; }\r\n}\r\n\r\n@keyframes sk-circleFadeDelay {\r\n  0%, 39%, 100% { opacity: 0; }\r\n  40% { opacity: 1; } \r\n}"; });
-define('text!components/data/data.html', ['module'], function(module) { module.exports = "<template>\r\n    <div>\r\n        <label>Search for GIFs</label>\r\n        <input type=\"text\" value.bind=\"searchText\" />\r\n        <button click.delegate=\"notifySearch()\" >Search</button>\r\n    </div>\r\n    <div repeat.for=\"image of images\">\r\n        <img src.bind=\"image.url\" />\r\n        <label>${image.caption}</label>\r\n    </div>\r\n</template>"; });
-define('text!components/form/form.html', ['module'], function(module) { module.exports = "<template>\r\n    <div>\r\n        <h2>Form</h2>\r\n\r\n        <require from=\"../spinner/spinner\"></require>\r\n        <iv-spinner spinner-type=\"spinner-cubes\" is-running.bind=\"actionState === 1\"></iv-spinner>\r\n\r\n        <div class=\"col-md-3\" if.bind=\"actionState !== 1\">\r\n            <div class=\"panel\">\r\n                ${loginErrorMessage}\r\n            </div>\r\n            <form>\r\n                <div class=\"form-group\">\r\n                    <label for=\"user\">User name</label>\r\n                    <input type=\"text\" id=\"user\" name=\"user\" class=\"form-control\" placeholder=\"Username\" value.bind=\"userName & validate\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"pass\">Password</label>\r\n                    <input type=\"password\" class=\"form-control\" id=\"pass\" name=\"pass\" placeholder=\"Password\" value.bind=\"password & validate\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"address\">Address</label>\r\n                    <textarea class=\"form-control\" id=\"address\" name=\"address\" placeholder=\"Address\" value.bind=\"address & validate\"></textarea>\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"state\">State</label>\r\n                    <select id=\"state\" name=\"state\">\r\n                        <option repeat.for=\"s of states\" value.bind=\"state\">${s}</option>\r\n                    </select>\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"isCitizen\">Citizen?</label>\r\n                    <input type=\"checkbox\" class=\"form-control\" id=\"isCitizen\" name=\"isCitizen\" placeholder=\"Citizen?\" checked.bind=\"isCitizen & validate\">\r\n                </div>\r\n                <hr />\r\n                <input type=\"submit\" name=\"submit\" class=\"btn btn-info\" value=\"Login\" click.delegate=\"submit()\">\r\n            </form>\r\n\r\n        </div>\r\n    </div>\r\n</template>"; });
-define('text!components/hello/hello.html', ['module'], function(module) { module.exports = "<template> \r\n  <label>Hi Everyone, this is Aurelia</label>\r\n  <input value.bind=\"firstName\"> \r\n  <input value.bind=\"lastName\"> \r\n  <button click.trigger=\"sayHello()\">Say Hello</button> \r\n</template>\r\n"; });
+define('text!components/data/data.css', ['module'], function(module) { module.exports = ".d-search-txt {\r\n    display: inline-block;\r\n    width: auto;\r\n}\r\n\r\n.d-images {\r\n    margin-top: 50px;\r\n    margin-left: 50px;\r\n}"; });
+define('text!components/data/data.html', ['module'], function(module) { module.exports = "<template>\r\n    \r\n    <require from=\"./data.css\"></require>\r\n    <div class=\"col-md-3 form-group\">\r\n        <label>Search for GIFs</label>\r\n        <input type=\"text\" class=\"form-control d-search-txt\" value.bind=\"searchText\" />\r\n        <button class=\"btn btn-info\" click.delegate=\"notifySearch()\" >Search</button>\r\n    </div>\r\n    <br/>\r\n    <div class=\"d-images\">\r\n        <div class=\"row\" repeat.for=\"image of images\">\r\n            <div class=\"col-md-2\">\r\n                <a href=\"#\" click.delegate=\"notifyOpenImageDlg(image)\"><img class=\"img-responsive img-rounded\" src.bind=\"image.url\" /></a>\r\n                <label>${image.caption}</label>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</template>"; });
+define('text!components/spinner/spinner.css', ['module'], function(module) { module.exports = "/* spinner-circles */\r\n.spinner-circles {\r\n  width: 40px;\r\n  height: 40px;\r\n\r\n  position: relative;\r\n  margin: 100px auto;\r\n}\r\n\r\n.double-bounce1, .double-bounce2 {\r\n  width: 100%;\r\n  height: 100%;\r\n  border-radius: 50%;\r\n  background-color: #952195;\r\n  opacity: 0.6;\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n\r\n  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;\r\n  animation: sk-bounce 2.0s infinite ease-in-out;\r\n}\r\n\r\n.double-bounce2 {\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n@-webkit-keyframes sk-bounce {\r\n  0%, 100% { -webkit-transform: scale(0.0) }\r\n  50% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bounce {\r\n  0%, 100% {\r\n    transform: scale(0.0);\r\n    -webkit-transform: scale(0.0);\r\n  } 50% {\r\n      transform: scale(1.0);\r\n      -webkit-transform: scale(1.0);\r\n    }\r\n}\r\n\r\n\r\n/* folding-cube */\r\n.sk-folding-cube {\r\n  margin: 20px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n  -webkit-transform: rotateZ(45deg);\r\n          transform: rotateZ(45deg);\r\n}\r\n\r\n.sk-folding-cube .sk-cube {\r\n  float: left;\r\n  width: 50%;\r\n  height: 50%;\r\n  position: relative;\r\n  -webkit-transform: scale(1.1);\r\n      -ms-transform: scale(1.1);\r\n          transform: scale(1.1); \r\n}\r\n.sk-folding-cube .sk-cube:before {\r\n  content: '';\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  width: 100%;\r\n  height: 100%;\r\n  background-color: #952195;\r\n  -webkit-animation: sk-foldCubeAngle 2.4s infinite linear both;\r\n          animation: sk-foldCubeAngle 2.4s infinite linear both;\r\n  -webkit-transform-origin: 100% 100%;\r\n      -ms-transform-origin: 100% 100%;\r\n          transform-origin: 100% 100%;\r\n}\r\n.sk-folding-cube .sk-cube2 {\r\n  -webkit-transform: scale(1.1) rotateZ(90deg);\r\n          transform: scale(1.1) rotateZ(90deg);\r\n}\r\n.sk-folding-cube .sk-cube3 {\r\n  -webkit-transform: scale(1.1) rotateZ(180deg);\r\n          transform: scale(1.1) rotateZ(180deg);\r\n}\r\n.sk-folding-cube .sk-cube4 {\r\n  -webkit-transform: scale(1.1) rotateZ(270deg);\r\n          transform: scale(1.1) rotateZ(270deg);\r\n}\r\n.sk-folding-cube .sk-cube2:before {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s;\r\n}\r\n.sk-folding-cube .sk-cube3:before {\r\n  -webkit-animation-delay: 0.6s;\r\n          animation-delay: 0.6s; \r\n}\r\n.sk-folding-cube .sk-cube4:before {\r\n  -webkit-animation-delay: 0.9s;\r\n          animation-delay: 0.9s;\r\n}\r\n@-webkit-keyframes sk-foldCubeAngle {\r\n  0%, 10% {\r\n    -webkit-transform: perspective(140px) rotateX(-180deg);\r\n            transform: perspective(140px) rotateX(-180deg);\r\n    opacity: 0; \r\n  } 25%, 75% {\r\n    -webkit-transform: perspective(140px) rotateX(0deg);\r\n            transform: perspective(140px) rotateX(0deg);\r\n    opacity: 1; \r\n  } 90%, 100% {\r\n    -webkit-transform: perspective(140px) rotateY(180deg);\r\n            transform: perspective(140px) rotateY(180deg);\r\n    opacity: 0; \r\n  } \r\n}\r\n\r\n@keyframes sk-foldCubeAngle {\r\n  0%, 10% {\r\n    -webkit-transform: perspective(140px) rotateX(-180deg);\r\n            transform: perspective(140px) rotateX(-180deg);\r\n    opacity: 0; \r\n  } 25%, 75% {\r\n    -webkit-transform: perspective(140px) rotateX(0deg);\r\n            transform: perspective(140px) rotateX(0deg);\r\n    opacity: 1; \r\n  } 90%, 100% {\r\n    -webkit-transform: perspective(140px) rotateY(180deg);\r\n            transform: perspective(140px) rotateY(180deg);\r\n    opacity: 0; \r\n  }\r\n}\r\n\r\n\r\n/* cube-grid */\r\n.sk-cube-grid {\r\n  width: 40px;\r\n  height: 40px;\r\n  margin: 100px auto;\r\n}\r\n\r\n.sk-cube-grid .sk-cube {\r\n  width: 33%;\r\n  height: 33%;\r\n  background-color: #952195;\r\n  float: left;\r\n  -webkit-animation: sk-cubeGridScaleDelay 1.3s infinite ease-in-out;\r\n          animation: sk-cubeGridScaleDelay 1.3s infinite ease-in-out; \r\n}\r\n.sk-cube-grid .sk-cube1 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n.sk-cube-grid .sk-cube2 {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s; }\r\n.sk-cube-grid .sk-cube3 {\r\n  -webkit-animation-delay: 0.4s;\r\n          animation-delay: 0.4s; }\r\n.sk-cube-grid .sk-cube4 {\r\n  -webkit-animation-delay: 0.1s;\r\n          animation-delay: 0.1s; }\r\n.sk-cube-grid .sk-cube5 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n.sk-cube-grid .sk-cube6 {\r\n  -webkit-animation-delay: 0.3s;\r\n          animation-delay: 0.3s; }\r\n.sk-cube-grid .sk-cube7 {\r\n  -webkit-animation-delay: 0s;\r\n          animation-delay: 0s; }\r\n.sk-cube-grid .sk-cube8 {\r\n  -webkit-animation-delay: 0.1s;\r\n          animation-delay: 0.1s; }\r\n.sk-cube-grid .sk-cube9 {\r\n  -webkit-animation-delay: 0.2s;\r\n          animation-delay: 0.2s; }\r\n\r\n@-webkit-keyframes sk-cubeGridScaleDelay {\r\n  0%, 70%, 100% {\r\n    -webkit-transform: scale3D(1, 1, 1);\r\n            transform: scale3D(1, 1, 1);\r\n  } 35% {\r\n    -webkit-transform: scale3D(0, 0, 1);\r\n            transform: scale3D(0, 0, 1); \r\n  }\r\n}\r\n\r\n@keyframes sk-cubeGridScaleDelay {\r\n  0%, 70%, 100% {\r\n    -webkit-transform: scale3D(1, 1, 1);\r\n            transform: scale3D(1, 1, 1);\r\n  } 35% {\r\n    -webkit-transform: scale3D(0, 0, 1);\r\n            transform: scale3D(0, 0, 1);\r\n  } \r\n}\r\n\r\n\r\n/* circle */\r\n.sk-circle {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n.sk-circle .sk-child {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n}\r\n.sk-circle .sk-child:before {\r\n  content: '';\r\n  display: block;\r\n  margin: 0 auto;\r\n  width: 15%;\r\n  height: 15%;\r\n  background-color: #952195;\r\n  border-radius: 100%;\r\n  -webkit-animation: sk-circleBounceDelay 1.2s infinite ease-in-out both;\r\n          animation: sk-circleBounceDelay 1.2s infinite ease-in-out both;\r\n}\r\n.sk-circle .sk-circle2 {\r\n  -webkit-transform: rotate(30deg);\r\n      -ms-transform: rotate(30deg);\r\n          transform: rotate(30deg); }\r\n.sk-circle .sk-circle3 {\r\n  -webkit-transform: rotate(60deg);\r\n      -ms-transform: rotate(60deg);\r\n          transform: rotate(60deg); }\r\n.sk-circle .sk-circle4 {\r\n  -webkit-transform: rotate(90deg);\r\n      -ms-transform: rotate(90deg);\r\n          transform: rotate(90deg); }\r\n.sk-circle .sk-circle5 {\r\n  -webkit-transform: rotate(120deg);\r\n      -ms-transform: rotate(120deg);\r\n          transform: rotate(120deg); }\r\n.sk-circle .sk-circle6 {\r\n  -webkit-transform: rotate(150deg);\r\n      -ms-transform: rotate(150deg);\r\n          transform: rotate(150deg); }\r\n.sk-circle .sk-circle7 {\r\n  -webkit-transform: rotate(180deg);\r\n      -ms-transform: rotate(180deg);\r\n          transform: rotate(180deg); }\r\n.sk-circle .sk-circle8 {\r\n  -webkit-transform: rotate(210deg);\r\n      -ms-transform: rotate(210deg);\r\n          transform: rotate(210deg); }\r\n.sk-circle .sk-circle9 {\r\n  -webkit-transform: rotate(240deg);\r\n      -ms-transform: rotate(240deg);\r\n          transform: rotate(240deg); }\r\n.sk-circle .sk-circle10 {\r\n  -webkit-transform: rotate(270deg);\r\n      -ms-transform: rotate(270deg);\r\n          transform: rotate(270deg); }\r\n.sk-circle .sk-circle11 {\r\n  -webkit-transform: rotate(300deg);\r\n      -ms-transform: rotate(300deg);\r\n          transform: rotate(300deg); }\r\n.sk-circle .sk-circle12 {\r\n  -webkit-transform: rotate(330deg);\r\n      -ms-transform: rotate(330deg);\r\n          transform: rotate(330deg); }\r\n.sk-circle .sk-circle2:before {\r\n  -webkit-animation-delay: -1.1s;\r\n          animation-delay: -1.1s; }\r\n.sk-circle .sk-circle3:before {\r\n  -webkit-animation-delay: -1s;\r\n          animation-delay: -1s; }\r\n.sk-circle .sk-circle4:before {\r\n  -webkit-animation-delay: -0.9s;\r\n          animation-delay: -0.9s; }\r\n.sk-circle .sk-circle5:before {\r\n  -webkit-animation-delay: -0.8s;\r\n          animation-delay: -0.8s; }\r\n.sk-circle .sk-circle6:before {\r\n  -webkit-animation-delay: -0.7s;\r\n          animation-delay: -0.7s; }\r\n.sk-circle .sk-circle7:before {\r\n  -webkit-animation-delay: -0.6s;\r\n          animation-delay: -0.6s; }\r\n.sk-circle .sk-circle8:before {\r\n  -webkit-animation-delay: -0.5s;\r\n          animation-delay: -0.5s; }\r\n.sk-circle .sk-circle9:before {\r\n  -webkit-animation-delay: -0.4s;\r\n          animation-delay: -0.4s; }\r\n.sk-circle .sk-circle10:before {\r\n  -webkit-animation-delay: -0.3s;\r\n          animation-delay: -0.3s; }\r\n.sk-circle .sk-circle11:before {\r\n  -webkit-animation-delay: -0.2s;\r\n          animation-delay: -0.2s; }\r\n.sk-circle .sk-circle12:before {\r\n  -webkit-animation-delay: -0.1s;\r\n          animation-delay: -0.1s; }\r\n\r\n@-webkit-keyframes sk-circleBounceDelay {\r\n  0%, 80%, 100% {\r\n    -webkit-transform: scale(0);\r\n            transform: scale(0);\r\n  } 40% {\r\n    -webkit-transform: scale(1);\r\n            transform: scale(1);\r\n  }\r\n}\r\n\r\n@keyframes sk-circleBounceDelay {\r\n  0%, 80%, 100% {\r\n    -webkit-transform: scale(0);\r\n            transform: scale(0);\r\n  } 40% {\r\n    -webkit-transform: scale(1);\r\n            transform: scale(1);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-rects */\r\n.spinner-rects {\r\n  margin: 100px auto;\r\n  width: 50px;\r\n  height: 40px;\r\n  text-align: center;\r\n  font-size: 10px;\r\n}\r\n\r\n.spinner-rects > div {\r\n  background-color: #952195;\r\n  height: 100%;\r\n  width: 6px;\r\n  display: inline-block;\r\n  \r\n  -webkit-animation: sk-stretchdelay 1.2s infinite ease-in-out;\r\n  animation: sk-stretchdelay 1.2s infinite ease-in-out;\r\n}\r\n\r\n.spinner-rects .rect2 {\r\n  -webkit-animation-delay: -1.1s;\r\n  animation-delay: -1.1s;\r\n}\r\n\r\n.spinner-rects .rect3 {\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n.spinner-rects .rect4 {\r\n  -webkit-animation-delay: -0.9s;\r\n  animation-delay: -0.9s;\r\n}\r\n\r\n.spinner-rects .rect5 {\r\n  -webkit-animation-delay: -0.8s;\r\n  animation-delay: -0.8s;\r\n}\r\n\r\n@-webkit-keyframes sk-stretchdelay {\r\n  0%, 40%, 100% { -webkit-transform: scaleY(0.4) }  \r\n  20% { -webkit-transform: scaleY(1.0) }\r\n}\r\n\r\n@keyframes sk-stretchdelay {\r\n  0%, 40%, 100% { \r\n    transform: scaleY(0.4);\r\n    -webkit-transform: scaleY(0.4);\r\n  }  20% { \r\n    transform: scaleY(1.0);\r\n    -webkit-transform: scaleY(1.0);\r\n  }\r\n}\r\n\r\n/* spinner-cubes */\r\n.spinner-cubes {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n\r\n.cube1, .cube2 {\r\n  background-color: #952195;\r\n  width: 15px;\r\n  height: 15px;\r\n  position: absolute;\r\n  top: 0;\r\n  left: 0;\r\n  \r\n  -webkit-animation: sk-cubemove 1.8s infinite ease-in-out;\r\n  animation: sk-cubemove 1.8s infinite ease-in-out;\r\n}\r\n\r\n.cube2 {\r\n  -webkit-animation-delay: -0.9s;\r\n  animation-delay: -0.9s;\r\n}\r\n\r\n@-webkit-keyframes sk-cubemove {\r\n  25% { -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5) }\r\n  50% { -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg) }\r\n  75% { -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5) }\r\n  100% { -webkit-transform: rotate(-360deg) }\r\n}\r\n\r\n@keyframes sk-cubemove {\r\n  25% { \r\n    transform: translateX(42px) rotate(-90deg) scale(0.5);\r\n    -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5);\r\n  } 50% { \r\n    transform: translateX(42px) translateY(42px) rotate(-179deg);\r\n    -webkit-transform: translateX(42px) translateY(42px) rotate(-179deg);\r\n  } 50.1% { \r\n    transform: translateX(42px) translateY(42px) rotate(-180deg);\r\n    -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg);\r\n  } 75% { \r\n    transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);\r\n    -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);\r\n  } 100% { \r\n    transform: rotate(-360deg);\r\n    -webkit-transform: rotate(-360deg);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-scaleout */\r\n\r\n.spinner-scaleout {\r\n  width: 40px;\r\n  height: 40px;\r\n  margin: 100px auto;\r\n  background-color: #952195;\r\n\r\n  border-radius: 100%;  \r\n  -webkit-animation: sk-scaleout 1.0s infinite ease-in-out;\r\n  animation: sk-scaleout 1.0s infinite ease-in-out;\r\n}\r\n\r\n@-webkit-keyframes sk-scaleout {\r\n  0% { -webkit-transform: scale(0) }\r\n  100% {\r\n    -webkit-transform: scale(1.0);\r\n    opacity: 0;\r\n  }\r\n}\r\n\r\n@keyframes sk-scaleout {\r\n  0% { \r\n    -webkit-transform: scale(0);\r\n    transform: scale(0);\r\n  } 100% {\r\n    -webkit-transform: scale(1.0);\r\n    transform: scale(1.0);\r\n    opacity: 0;\r\n  }\r\n}\r\n\r\n\r\n/* spinner-dots */\r\n\r\n.spinner-dots {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n  text-align: center;\r\n  \r\n  -webkit-animation: sk-rotate 2.0s infinite linear;\r\n  animation: sk-rotate 2.0s infinite linear;\r\n}\r\n\r\n.dot1, .dot2 {\r\n  width: 60%;\r\n  height: 60%;\r\n  display: inline-block;\r\n  position: absolute;\r\n  top: 0;\r\n  background-color: #952195;\r\n  border-radius: 100%;\r\n  \r\n  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;\r\n  animation: sk-bounce 2.0s infinite ease-in-out;\r\n}\r\n\r\n.dot2 {\r\n  top: auto;\r\n  bottom: 0;\r\n  -webkit-animation-delay: -1.0s;\r\n  animation-delay: -1.0s;\r\n}\r\n\r\n@-webkit-keyframes sk-rotate { 100% { -webkit-transform: rotate(360deg) }}\r\n@keyframes sk-rotate { 100% { transform: rotate(360deg); -webkit-transform: rotate(360deg) }}\r\n\r\n@-webkit-keyframes sk-bounce {\r\n  0%, 100% { -webkit-transform: scale(0.0) }\r\n  50% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bounce {\r\n  0%, 100% { \r\n    transform: scale(0.0);\r\n    -webkit-transform: scale(0.0);\r\n  } 50% { \r\n    transform: scale(1.0);\r\n    -webkit-transform: scale(1.0);\r\n  }\r\n}\r\n\r\n\r\n/* spinner-bounce */\r\n\r\n.spinner-bounce {\r\n  margin: 100px auto 0;\r\n  width: 70px;\r\n  text-align: center;\r\n}\r\n\r\n.spinner-bounce > div {\r\n  width: 18px;\r\n  height: 18px;\r\n  background-color: #952195;\r\n\r\n  border-radius: 100%;\r\n  display: inline-block;\r\n  -webkit-animation: sk-bouncedelay 1.4s infinite ease-in-out both;\r\n  animation: sk-bouncedelay 1.4s infinite ease-in-out both;\r\n}\r\n\r\n.spinner-bounce .bounce1 {\r\n  -webkit-animation-delay: -0.32s;\r\n  animation-delay: -0.32s;\r\n}\r\n\r\n.spinner-bounce .bounce2 {\r\n  -webkit-animation-delay: -0.16s;\r\n  animation-delay: -0.16s;\r\n}\r\n\r\n@-webkit-keyframes sk-bouncedelay {\r\n  0%, 80%, 100% { -webkit-transform: scale(0) }\r\n  40% { -webkit-transform: scale(1.0) }\r\n}\r\n\r\n@keyframes sk-bouncedelay {\r\n  0%, 80%, 100% { \r\n    -webkit-transform: scale(0);\r\n    transform: scale(0);\r\n  } 40% { \r\n    -webkit-transform: scale(1.0);\r\n    transform: scale(1.0);\r\n  }\r\n}\r\n\r\n/* spinner-fading-circle */\r\n\r\n.sk-fading-circle {\r\n  margin: 100px auto;\r\n  width: 40px;\r\n  height: 40px;\r\n  position: relative;\r\n}\r\n\r\n.sk-fading-circle .sk-circle {\r\n  width: 100%;\r\n  height: 100%;\r\n  position: absolute;\r\n  left: 0;\r\n  top: 0;\r\n}\r\n\r\n.sk-fading-circle .sk-circle:before {\r\n  content: '';\r\n  display: block;\r\n  margin: 0 auto;\r\n  width: 15%;\r\n  height: 15%;\r\n  background-color: #952195;\r\n  border-radius: 100%;\r\n  -webkit-animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;\r\n          animation: sk-circleFadeDelay 1.2s infinite ease-in-out both;\r\n}\r\n.sk-fading-circle .sk-circle2 {\r\n  -webkit-transform: rotate(30deg);\r\n      -ms-transform: rotate(30deg);\r\n          transform: rotate(30deg);\r\n}\r\n.sk-fading-circle .sk-circle3 {\r\n  -webkit-transform: rotate(60deg);\r\n      -ms-transform: rotate(60deg);\r\n          transform: rotate(60deg);\r\n}\r\n.sk-fading-circle .sk-circle4 {\r\n  -webkit-transform: rotate(90deg);\r\n      -ms-transform: rotate(90deg);\r\n          transform: rotate(90deg);\r\n}\r\n.sk-fading-circle .sk-circle5 {\r\n  -webkit-transform: rotate(120deg);\r\n      -ms-transform: rotate(120deg);\r\n          transform: rotate(120deg);\r\n}\r\n.sk-fading-circle .sk-circle6 {\r\n  -webkit-transform: rotate(150deg);\r\n      -ms-transform: rotate(150deg);\r\n          transform: rotate(150deg);\r\n}\r\n.sk-fading-circle .sk-circle7 {\r\n  -webkit-transform: rotate(180deg);\r\n      -ms-transform: rotate(180deg);\r\n          transform: rotate(180deg);\r\n}\r\n.sk-fading-circle .sk-circle8 {\r\n  -webkit-transform: rotate(210deg);\r\n      -ms-transform: rotate(210deg);\r\n          transform: rotate(210deg);\r\n}\r\n.sk-fading-circle .sk-circle9 {\r\n  -webkit-transform: rotate(240deg);\r\n      -ms-transform: rotate(240deg);\r\n          transform: rotate(240deg);\r\n}\r\n.sk-fading-circle .sk-circle10 {\r\n  -webkit-transform: rotate(270deg);\r\n      -ms-transform: rotate(270deg);\r\n          transform: rotate(270deg);\r\n}\r\n.sk-fading-circle .sk-circle11 {\r\n  -webkit-transform: rotate(300deg);\r\n      -ms-transform: rotate(300deg);\r\n          transform: rotate(300deg); \r\n}\r\n.sk-fading-circle .sk-circle12 {\r\n  -webkit-transform: rotate(330deg);\r\n      -ms-transform: rotate(330deg);\r\n          transform: rotate(330deg); \r\n}\r\n.sk-fading-circle .sk-circle2:before {\r\n  -webkit-animation-delay: -1.1s;\r\n          animation-delay: -1.1s; \r\n}\r\n.sk-fading-circle .sk-circle3:before {\r\n  -webkit-animation-delay: -1s;\r\n          animation-delay: -1s; \r\n}\r\n.sk-fading-circle .sk-circle4:before {\r\n  -webkit-animation-delay: -0.9s;\r\n          animation-delay: -0.9s; \r\n}\r\n.sk-fading-circle .sk-circle5:before {\r\n  -webkit-animation-delay: -0.8s;\r\n          animation-delay: -0.8s; \r\n}\r\n.sk-fading-circle .sk-circle6:before {\r\n  -webkit-animation-delay: -0.7s;\r\n          animation-delay: -0.7s; \r\n}\r\n.sk-fading-circle .sk-circle7:before {\r\n  -webkit-animation-delay: -0.6s;\r\n          animation-delay: -0.6s; \r\n}\r\n.sk-fading-circle .sk-circle8:before {\r\n  -webkit-animation-delay: -0.5s;\r\n          animation-delay: -0.5s; \r\n}\r\n.sk-fading-circle .sk-circle9:before {\r\n  -webkit-animation-delay: -0.4s;\r\n          animation-delay: -0.4s;\r\n}\r\n.sk-fading-circle .sk-circle10:before {\r\n  -webkit-animation-delay: -0.3s;\r\n          animation-delay: -0.3s;\r\n}\r\n.sk-fading-circle .sk-circle11:before {\r\n  -webkit-animation-delay: -0.2s;\r\n          animation-delay: -0.2s;\r\n}\r\n.sk-fading-circle .sk-circle12:before {\r\n  -webkit-animation-delay: -0.1s;\r\n          animation-delay: -0.1s;\r\n}\r\n\r\n@-webkit-keyframes sk-circleFadeDelay {\r\n  0%, 39%, 100% { opacity: 0; }\r\n  40% { opacity: 1; }\r\n}\r\n\r\n@keyframes sk-circleFadeDelay {\r\n  0%, 39%, 100% { opacity: 0; }\r\n  40% { opacity: 1; } \r\n}"; });
+define('text!components/form/form.html', ['module'], function(module) { module.exports = "<template>\r\n    <div>\r\n\r\n        <div class=\"col-md-3\">\r\n            <div class=\"alert alert-danger\" if.bind=\"errorMessage\">\r\n                ${errorMessage}\r\n            </div>\r\n            <div class=\"alert alert-info\" if.bind=\"infoMessage\">\r\n                ${infoMessage}\r\n            </div>\r\n            <form>\r\n                <div class=\"form-group\">\r\n                    <label for=\"user\">User name</label>\r\n                    <input type=\"text\" id=\"user\" name=\"user\" class=\"form-control\" placeholder=\"Username\" value.bind=\"userName & validate\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"pass\">Password</label>\r\n                    <input type=\"password\" class=\"form-control\" id=\"pass\" name=\"pass\" placeholder=\"Password\" value.bind=\"password & validate\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"address\">Address</label>\r\n                    <textarea class=\"form-control\" id=\"address\" name=\"address\" placeholder=\"Address\" value.bind=\"address & validate\"></textarea>\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"state\">State</label>\r\n                    <select class=\"form-control\" id=\"state\" name=\"state\">\r\n                        <option repeat.for=\"s of states\" value.bind=\"state\">${s}</option>\r\n                    </select>\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"isCitizen\">Citizen?</label>\r\n                    <input type=\"checkbox\" class=\"form-control\" id=\"isCitizen\" name=\"isCitizen\" placeholder=\"Citizen?\" checked.bind=\"isCitizen & validate\">\r\n                </div>\r\n                <hr />\r\n                <input type=\"submit\" name=\"submit\" class=\"btn btn-info\" value=\"Submit\" click.delegate=\"submit()\">\r\n            </form>\r\n\r\n        </div>\r\n    </div>\r\n</template>"; });
+define('text!components/hello/hello.html', ['module'], function(module) { module.exports = "<template> \r\n        <div class=\"col-md-3\" if.bind=\"actionState !== 1\">\r\n            <form>\r\n                <div class=\"form-group\">\r\n                    <label for=\"firstName\">First name</label>\r\n                    <input type=\"text\" id=\"firstName\" name=\"firstName\" class=\"form-control\" placeholder=\"First name\" value.bind=\"firstName\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                    <label for=\"lastName\">Last name</label>\r\n                    <input type=\"text\" id=\"lastName\" name=\"lastName\" class=\"form-control\" placeholder=\"Last name\" value.bind=\"lastName\">\r\n                </div>\r\n                <div class=\"form-group\">\r\n                  <button class=\"btn btn-info\" click.delegate=\"sayHello()\">Say Hello</button>\r\n                </div>\r\n            </form>\r\n        </div>\r\n</template>\r\n"; });
+define('text!components/image-dlg/image-dlg.html', ['module'], function(module) { module.exports = "<template>\r\n    <ux-dialog>\r\n        <ux-dialog-body>\r\n            <img src.bind=\"image.url\" />\r\n        </ux-dialog-body>\r\n\r\n        <ux-dialog-footer>\r\n            <button click.trigger=\"controller.ok()\">Close</button>\r\n        </ux-dialog-footer>\r\n\r\n    </ux-dialog>\r\n\r\n</template>"; });
 define('text!components/spinner/spinner.html', ['module'], function(module) { module.exports = "<template>\r\n    <require from=\"./spinner.css\"></require>\r\n    <div if.bind=\"spinnerType==='spinner-circles'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner\">\r\n            <div class=\"double-bounce1\"></div>\r\n            <div class=\"double-bounce2\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-folding-cube'\">\r\n        <div if.bind=\"isRunning\" class=\"sk-folding-cube\">\r\n            <div class=\"sk-cube1 sk-cube\"></div>\r\n            <div class=\"sk-cube2 sk-cube\"></div>\r\n            <div class=\"sk-cube4 sk-cube\"></div>\r\n            <div class=\"sk-cube3 sk-cube\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-cube-grid'\">\r\n        <div if.bind=\"isRunning\" class=\"sk-cube-grid\">\r\n            <div class=\"sk-cube sk-cube1\"></div>\r\n            <div class=\"sk-cube sk-cube2\"></div>\r\n            <div class=\"sk-cube sk-cube3\"></div>\r\n            <div class=\"sk-cube sk-cube4\"></div>\r\n            <div class=\"sk-cube sk-cube5\"></div>\r\n            <div class=\"sk-cube sk-cube6\"></div>\r\n            <div class=\"sk-cube sk-cube7\"></div>\r\n            <div class=\"sk-cube sk-cube8\"></div>\r\n            <div class=\"sk-cube sk-cube9\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-circle'\">\r\n        <div if.bind=\"isRunning\" class=\"sk-circle\">\r\n            <div class=\"sk-circle1 sk-child\"></div>\r\n            <div class=\"sk-circle2 sk-child\"></div>\r\n            <div class=\"sk-circle3 sk-child\"></div>\r\n            <div class=\"sk-circle4 sk-child\"></div>\r\n            <div class=\"sk-circle5 sk-child\"></div>\r\n            <div class=\"sk-circle6 sk-child\"></div>\r\n            <div class=\"sk-circle7 sk-child\"></div>\r\n            <div class=\"sk-circle8 sk-child\"></div>\r\n            <div class=\"sk-circle9 sk-child\"></div>\r\n            <div class=\"sk-circle10 sk-child\"></div>\r\n            <div class=\"sk-circle11 sk-child\"></div>\r\n            <div class=\"sk-circle12 sk-child\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-rects'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner-rects\">\r\n            <div class=\"rect1\"></div>\r\n            <div class=\"rect2\"></div>\r\n            <div class=\"rect3\"></div>\r\n            <div class=\"rect4\"></div>\r\n            <div class=\"rect5\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-cubes'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner-cubes\">\r\n            <div class=\"cube1\"></div>\r\n            <div class=\"cube2\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-scaleout'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner-scaleout\"></div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-dots'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner-dots\">\r\n            <div class=\"dot1\"></div>\r\n            <div class=\"dot2\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-bounce'\">\r\n        <div if.bind=\"isRunning\" class=\"spinner-bounce\">\r\n            <div class=\"bounce1\"></div>\r\n            <div class=\"bounce2\"></div>\r\n            <div class=\"bounce3\"></div>\r\n        </div>\r\n    </div>\r\n    <div if.bind=\"spinnerType==='spinner-fading-circle'\">\r\n        <div if.bind=\"isRunning\" class=\"sk-fading-circle\">\r\n            <div class=\"sk-circle1 sk-circle\"></div>\r\n            <div class=\"sk-circle2 sk-circle\"></div>\r\n            <div class=\"sk-circle3 sk-circle\"></div>\r\n            <div class=\"sk-circle4 sk-circle\"></div>\r\n            <div class=\"sk-circle5 sk-circle\"></div>\r\n            <div class=\"sk-circle6 sk-circle\"></div>\r\n            <div class=\"sk-circle7 sk-circle\"></div>\r\n            <div class=\"sk-circle8 sk-circle\"></div>\r\n            <div class=\"sk-circle9 sk-circle\"></div>\r\n            <div class=\"sk-circle10 sk-circle\"></div>\r\n            <div class=\"sk-circle11 sk-circle\"></div>\r\n            <div class=\"sk-circle12 sk-circle\"></div>\r\n        </div>\r\n    </div>\r\n</template>\r\n"; });
-define('text!views/data-view/data-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <require from=\"../../components/data/data\"></require>\r\n    <data images.bind=\"images\" search.call=\"searchGifs($event)\"></data>\r\n</template>"; });
-define('text!views/form-view/form-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <require from=\"../../components/form/form\"></require>\r\n    <d-form></d-form>\r\n</template>"; });
+define('text!views/data-view/data-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <h2>Data</h2>\r\n\r\n    <require from=\"../../components/spinner/spinner\"></require>\r\n    <iv-spinner spinner-type=\"spinner-folding-cube\" is-running.bind=\"actionState === 1\"></iv-spinner>\r\n\r\n    <require from=\"../../components/data/data\"></require>\r\n    <data images.bind=\"images & throttle: 1000\" search.call=\"searchGifs($event)\"></data>\r\n</template>"; });
+define('text!views/form-view/form-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <h2>Form</h2>\r\n    <require from=\"../../components/form/form\"></require>\r\n    <d-form></d-form>\r\n</template>"; });
 define('text!views/hello-view/hello-view.html', ['module'], function(module) { module.exports = "<template>\r\n  <h2>${message}</h2>\r\n\r\n  <require from=\"../../components/hello/hello\"></require> \r\n  <say-hello></say-hello>\r\n\r\n</template>"; });
 define('text!views/home-view/home-view.html', ['module'], function(module) { module.exports = "<template>\r\n    <h2>Home</h2>\r\n</template>"; });
 //# sourceMappingURL=app-bundle.js.map

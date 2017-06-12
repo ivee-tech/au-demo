@@ -1,10 +1,29 @@
-import {RouterConfiguration, Router} from 'aurelia-router';
+import { inject } from 'aurelia-framework';
+import { RouterConfiguration, Router } from 'aurelia-router';
+import { DialogService } from 'aurelia-dialog';
+import { EventAggregator, Subscription } from 'aurelia-event-aggregator';
 
+import { ImageDlg } from './components/image-dlg/image-dlg';
+import { Image } from './models/image';
+
+@inject(DialogService, EventAggregator)
 export class App { 
 
   message = 'Aurelia demo';
 
   private router: Router;
+  private image: Image;
+  private openImageDlgSubscr: Subscription;
+
+  constructor(
+    private dialogService: DialogService,
+    private ea: EventAggregator
+  ) {
+    this.openImageDlgSubscr = ea.subscribe('OPEN_IMAGE_DLG', (img: Image) => {
+      this.image = img;
+      this.openImageDlg();
+    });
+  }
 
   configureRouter(config: RouterConfiguration, router: Router): void { 
     config.title = 'Aurelia'; 
@@ -17,4 +36,21 @@ export class App {
     ]); 
     this.router = router;
   }
+
+  detached() {
+    this.openImageDlgSubscr.dispose();
+  }
+
+  private openImageDlg() {
+    this.dialogService.open({ viewModel: ImageDlg, model: this.image }).whenClosed(response => {
+        console.log(response);
+
+        if (!response.wasCancelled) {
+            console.log('OK');
+        } else {
+            console.log('cancelled');
+        }
+    });
+  }
+
 }

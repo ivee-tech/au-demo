@@ -1,6 +1,17 @@
 <template> 
-  <label>Hi Everyone, this is Aurelia</label>
-  <input value.bind="firstName"> 
-  <input value.bind="lastName"> 
-  <button click.trigger="sayHello()">Say Hello</button> 
+        <div class="col-md-3" if.bind="actionState !== 1">
+            <form>
+                <div class="form-group">
+                    <label for="firstName">First name</label>
+                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First name" value.bind="firstName">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last name</label>
+                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Last name" value.bind="lastName">
+                </div>
+                <div class="form-group">
+                  <button class="btn btn-info" click.delegate="sayHello()">Say Hello</button>
+                </div>
+            </form>
+        </div>
 </template>

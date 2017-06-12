@@ -14,7 +14,8 @@ export function configure(aurelia: Aurelia) {
     .standardConfiguration()
     .feature('resources')
     .plugin('aurelia-router')
-    .plugin('aurelia-validation');
+    .plugin('aurelia-validation')
+    .plugin('aurelia-dialog');
 
   if (environment.debug) {
     aurelia.use.developmentLogging();

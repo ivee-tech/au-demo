@@ -13,7 +13,8 @@ export class Form {
 
     private states: string[] = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'VIC', 'TAS', 'WA'];
 
-    private loginErrorMessage: string;
+    private errorMessage: string;
+    private infoMessage: string;
 
     constructor(private validationController: ValidationController) {
         ValidationRules
@@ -24,17 +25,20 @@ export class Form {
     }
 
     submit() {
+        this.infoMessage = null;
+        this.errorMessage = null;
         this.validationController
             .validate()
             .then(result => {
                 if (result.valid) {
-                    this.loginErrorMessage = null;
-                    alert('Validation successful. Submitting...');
+                    this.errorMessage = null;
+                    this.infoMessage = 'Validation successful. Submitting...';
                 }
                 else {
-                    this.loginErrorMessage = 'Validaton error(s):';
+                    this.infoMessage = null;
+                    this.errorMessage = 'Validaton error(s):';
                     for (let error of this.validationController.errors) {
-                        this.loginErrorMessage += error.message + ' ';
+                        this.errorMessage += error.message + ' ';
                     }
                 }
             })

@@ -1,4 +1,9 @@
 <template>
+    <h2>Data</h2>
+
+    <require from="../../components/spinner/spinner"></require>
+    <iv-spinner spinner-type="spinner-folding-cube" is-running.bind="actionState === 1"></iv-spinner>
+
     <require from="../../components/data/data"></require>
-    <data images.bind="images" search.call="searchGifs($event)"></data>
+    <data images.bind="images & throttle: 1000" search.call="searchGifs($event)"></data>
 </template>
