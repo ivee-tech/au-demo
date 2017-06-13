@@ -5922,155 +5922,6 @@ var requirejs, require, define;
 }(this, (typeof setTimeout === 'undefined' ? undefined : setTimeout)));
 
 _aureliaConfigureModuleLoader();
-define('aurelia-bootstrapper',['exports', 'aurelia-pal', 'aurelia-pal-browser', 'aurelia-polyfills'], function (exports, _aureliaPal, _aureliaPalBrowser) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.bootstrap = bootstrap;
-
-
-  var bootstrapQueue = [];
-  var sharedLoader = null;
-  var Aurelia = null;
-
-  function onBootstrap(callback) {
-    return new Promise(function (resolve, reject) {
-      if (sharedLoader) {
-        resolve(callback(sharedLoader));
-      } else {
-        bootstrapQueue.push(function () {
-          try {
-            resolve(callback(sharedLoader));
-          } catch (e) {
-            reject(e);
-          }
-        });
-      }
-    });
-  }
-
-  function ready(global) {
-    return new Promise(function (resolve, reject) {
-      if (global.document.readyState === 'complete') {
-        resolve(global.document);
-      } else {
-        global.document.addEventListener('DOMContentLoaded', completed);
-        global.addEventListener('load', completed);
-      }
-
-      function completed() {
-        global.document.removeEventListener('DOMContentLoaded', completed);
-        global.removeEventListener('load', completed);
-        resolve(global.document);
-      }
-    });
-  }
-
-  function createLoader() {
-    if (_aureliaPal.PLATFORM.Loader) {
-      return Promise.resolve(new _aureliaPal.PLATFORM.Loader());
-    }
-
-    if (window.System && typeof window.System.import === 'function') {
-      return System.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
-        return System.normalize('aurelia-loader-default', bootstrapperName);
-      }).then(function (loaderName) {
-        return System.import(loaderName).then(function (m) {
-          return new m.DefaultLoader();
-        });
-      });
-    }
-
-    if (typeof window.require === 'function') {
-      return new Promise(function (resolve, reject) {
-        return require(['aurelia-loader-default'], function (m) {
-          return resolve(new m.DefaultLoader());
-        }, reject);
-      });
-    }
-
-    return Promise.reject('No PLATFORM.Loader is defined and there is neither a System API (ES6) or a Require API (AMD) globally available to load your app.');
-  }
-
-  function preparePlatform(loader) {
-    return loader.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
-      return loader.normalize('aurelia-framework', bootstrapperName).then(function (frameworkName) {
-        loader.map('aurelia-framework', frameworkName);
-
-        return Promise.all([loader.normalize('aurelia-dependency-injection', frameworkName).then(function (diName) {
-          return loader.map('aurelia-dependency-injection', diName);
-        }), loader.normalize('aurelia-router', bootstrapperName).then(function (routerName) {
-          return loader.map('aurelia-router', routerName);
-        }), loader.normalize('aurelia-logging-console', bootstrapperName).then(function (loggingConsoleName) {
-          return loader.map('aurelia-logging-console', loggingConsoleName);
-        })]).then(function () {
-          return loader.loadModule(frameworkName).then(function (m) {
-            return Aurelia = m.Aurelia;
-          });
-        });
-      });
-    });
-  }
-
-  function handleApp(loader, appHost) {
-    var moduleId = appHost.getAttribute('aurelia-app') || appHost.getAttribute('data-aurelia-app');
-    return config(loader, appHost, moduleId);
-  }
-
-  function config(loader, appHost, configModuleId) {
-    var aurelia = new Aurelia(loader);
-    aurelia.host = appHost;
-    aurelia.configModuleId = configModuleId || null;
-
-    if (configModuleId) {
-      return loader.loadModule(configModuleId).then(function (customConfig) {
-        if (!customConfig.configure) {
-          throw new Error("Cannot initialize module '" + configModuleId + "' without a configure function.");
-        }
-
-        customConfig.configure(aurelia);
-      });
-    }
-
-    aurelia.use.standardConfiguration().developmentLogging();
-
-    return aurelia.start().then(function () {
-      return aurelia.setRoot();
-    });
-  }
-
-  function run() {
-    return ready(window).then(function (doc) {
-      (0, _aureliaPalBrowser.initialize)();
-
-      var appHost = doc.querySelectorAll('[aurelia-app],[data-aurelia-app]');
-      return createLoader().then(function (loader) {
-        return preparePlatform(loader).then(function () {
-          for (var i = 0, ii = appHost.length; i < ii; ++i) {
-            handleApp(loader, appHost[i]).catch(console.error.bind(console));
-          }
-
-          sharedLoader = loader;
-          for (var _i = 0, _ii = bootstrapQueue.length; _i < _ii; ++_i) {
-            bootstrapQueue[_i]();
-          }
-          bootstrapQueue = null;
-        });
-      });
-    });
-  }
-
-  function bootstrap(configure) {
-    return onBootstrap(function (loader) {
-      var aurelia = new Aurelia(loader);
-      return configure(aurelia);
-    });
-  }
-
-  run();
-});
 define('aurelia-binding',['exports', 'aurelia-logging', 'aurelia-pal', 'aurelia-task-queue', 'aurelia-metadata'], function (exports, _aureliaLogging, _aureliaPal, _aureliaTaskQueue, _aureliaMetadata) {
   'use strict';
 
@@ -11581,6 +11432,155 @@ define('aurelia-binding',['exports', 'aurelia-logging', 'aurelia-pal', 'aurelia-
     return deco(targetOrConfig, key, descriptor);
   }
 });
+define('aurelia-bootstrapper',['exports', 'aurelia-pal', 'aurelia-pal-browser', 'aurelia-polyfills'], function (exports, _aureliaPal, _aureliaPalBrowser) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.bootstrap = bootstrap;
+
+
+  var bootstrapQueue = [];
+  var sharedLoader = null;
+  var Aurelia = null;
+
+  function onBootstrap(callback) {
+    return new Promise(function (resolve, reject) {
+      if (sharedLoader) {
+        resolve(callback(sharedLoader));
+      } else {
+        bootstrapQueue.push(function () {
+          try {
+            resolve(callback(sharedLoader));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+    });
+  }
+
+  function ready(global) {
+    return new Promise(function (resolve, reject) {
+      if (global.document.readyState === 'complete') {
+        resolve(global.document);
+      } else {
+        global.document.addEventListener('DOMContentLoaded', completed);
+        global.addEventListener('load', completed);
+      }
+
+      function completed() {
+        global.document.removeEventListener('DOMContentLoaded', completed);
+        global.removeEventListener('load', completed);
+        resolve(global.document);
+      }
+    });
+  }
+
+  function createLoader() {
+    if (_aureliaPal.PLATFORM.Loader) {
+      return Promise.resolve(new _aureliaPal.PLATFORM.Loader());
+    }
+
+    if (window.System && typeof window.System.import === 'function') {
+      return System.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
+        return System.normalize('aurelia-loader-default', bootstrapperName);
+      }).then(function (loaderName) {
+        return System.import(loaderName).then(function (m) {
+          return new m.DefaultLoader();
+        });
+      });
+    }
+
+    if (typeof window.require === 'function') {
+      return new Promise(function (resolve, reject) {
+        return require(['aurelia-loader-default'], function (m) {
+          return resolve(new m.DefaultLoader());
+        }, reject);
+      });
+    }
+
+    return Promise.reject('No PLATFORM.Loader is defined and there is neither a System API (ES6) or a Require API (AMD) globally available to load your app.');
+  }
+
+  function preparePlatform(loader) {
+    return loader.normalize('aurelia-bootstrapper').then(function (bootstrapperName) {
+      return loader.normalize('aurelia-framework', bootstrapperName).then(function (frameworkName) {
+        loader.map('aurelia-framework', frameworkName);
+
+        return Promise.all([loader.normalize('aurelia-dependency-injection', frameworkName).then(function (diName) {
+          return loader.map('aurelia-dependency-injection', diName);
+        }), loader.normalize('aurelia-router', bootstrapperName).then(function (routerName) {
+          return loader.map('aurelia-router', routerName);
+        }), loader.normalize('aurelia-logging-console', bootstrapperName).then(function (loggingConsoleName) {
+          return loader.map('aurelia-logging-console', loggingConsoleName);
+        })]).then(function () {
+          return loader.loadModule(frameworkName).then(function (m) {
+            return Aurelia = m.Aurelia;
+          });
+        });
+      });
+    });
+  }
+
+  function handleApp(loader, appHost) {
+    var moduleId = appHost.getAttribute('aurelia-app') || appHost.getAttribute('data-aurelia-app');
+    return config(loader, appHost, moduleId);
+  }
+
+  function config(loader, appHost, configModuleId) {
+    var aurelia = new Aurelia(loader);
+    aurelia.host = appHost;
+    aurelia.configModuleId = configModuleId || null;
+
+    if (configModuleId) {
+      return loader.loadModule(configModuleId).then(function (customConfig) {
+        if (!customConfig.configure) {
+          throw new Error("Cannot initialize module '" + configModuleId + "' without a configure function.");
+        }
+
+        customConfig.configure(aurelia);
+      });
+    }
+
+    aurelia.use.standardConfiguration().developmentLogging();
+
+    return aurelia.start().then(function () {
+      return aurelia.setRoot();
+    });
+  }
+
+  function run() {
+    return ready(window).then(function (doc) {
+      (0, _aureliaPalBrowser.initialize)();
+
+      var appHost = doc.querySelectorAll('[aurelia-app],[data-aurelia-app]');
+      return createLoader().then(function (loader) {
+        return preparePlatform(loader).then(function () {
+          for (var i = 0, ii = appHost.length; i < ii; ++i) {
+            handleApp(loader, appHost[i]).catch(console.error.bind(console));
+          }
+
+          sharedLoader = loader;
+          for (var _i = 0, _ii = bootstrapQueue.length; _i < _ii; ++_i) {
+            bootstrapQueue[_i]();
+          }
+          bootstrapQueue = null;
+        });
+      });
+    });
+  }
+
+  function bootstrap(configure) {
+    return onBootstrap(function (loader) {
+      var aurelia = new Aurelia(loader);
+      return configure(aurelia);
+    });
+  }
+
+  run();
+});
 define('aurelia-event-aggregator',['exports', 'aurelia-logging'], function (exports, _aureliaLogging) {
   'use strict';
 
@@ -13052,6 +13052,51 @@ define('aurelia-framework',['exports', 'aurelia-dependency-injection', 'aurelia-
   exports.FrameworkConfiguration = FrameworkConfiguration;
   var LogManager = exports.LogManager = TheLogManager;
 });
+define('aurelia-history',['exports'], function (exports) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+
+  
+
+  function mi(name) {
+    throw new Error('History must implement ' + name + '().');
+  }
+
+  var History = exports.History = function () {
+    function History() {
+      
+    }
+
+    History.prototype.activate = function activate(options) {
+      mi('activate');
+    };
+
+    History.prototype.deactivate = function deactivate() {
+      mi('deactivate');
+    };
+
+    History.prototype.getAbsoluteRoot = function getAbsoluteRoot() {
+      mi('getAbsoluteRoot');
+    };
+
+    History.prototype.navigate = function navigate(fragment, options) {
+      mi('navigate');
+    };
+
+    History.prototype.navigateBack = function navigateBack() {
+      mi('navigateBack');
+    };
+
+    History.prototype.setTitle = function setTitle(title) {
+      mi('setTitle');
+    };
+
+    return History;
+  }();
+});
 define('aurelia-fetch-client',['exports'], function (exports) {
   'use strict';
 
@@ -13308,51 +13353,6 @@ define('aurelia-fetch-client',['exports'], function (exports) {
   function thrower(x) {
     throw x;
   }
-});
-define('aurelia-history',['exports'], function (exports) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-
-  
-
-  function mi(name) {
-    throw new Error('History must implement ' + name + '().');
-  }
-
-  var History = exports.History = function () {
-    function History() {
-      
-    }
-
-    History.prototype.activate = function activate(options) {
-      mi('activate');
-    };
-
-    History.prototype.deactivate = function deactivate() {
-      mi('deactivate');
-    };
-
-    History.prototype.getAbsoluteRoot = function getAbsoluteRoot() {
-      mi('getAbsoluteRoot');
-    };
-
-    History.prototype.navigate = function navigate(fragment, options) {
-      mi('navigate');
-    };
-
-    History.prototype.navigateBack = function navigateBack() {
-      mi('navigateBack');
-    };
-
-    History.prototype.setTitle = function setTitle(title) {
-      mi('setTitle');
-    };
-
-    return History;
-  }();
 });
 define('aurelia-history-browser',['exports', 'aurelia-pal', 'aurelia-history'], function (exports, _aureliaPal, _aureliaHistory) {
   'use strict';
@@ -13833,175 +13833,6 @@ define('aurelia-loader',['exports', 'aurelia-path', 'aurelia-metadata'], functio
     return Loader;
   }();
 });
-define('aurelia-logging',['exports'], function (exports) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.getLogger = getLogger;
-  exports.addAppender = addAppender;
-  exports.removeAppender = removeAppender;
-  exports.setLevel = setLevel;
-  exports.getLevel = getLevel;
-
-  
-
-  var logLevel = exports.logLevel = {
-    none: 0,
-    error: 1,
-    warn: 2,
-    info: 3,
-    debug: 4
-  };
-
-  var loggers = {};
-  var appenders = [];
-  var globalDefaultLevel = logLevel.none;
-
-  function appendArgs() {
-    return [this].concat(Array.prototype.slice.call(arguments));
-  }
-
-  function logFactory(level) {
-    var threshold = logLevel[level];
-    return function () {
-      if (this.level < threshold) {
-        return;
-      }
-
-      var args = appendArgs.apply(this, arguments);
-      var i = appenders.length;
-      while (i--) {
-        var _appenders$i;
-
-        (_appenders$i = appenders[i])[level].apply(_appenders$i, args);
-      }
-    };
-  }
-
-  function connectLoggers() {
-    var proto = Logger.prototype;
-    proto.debug = logFactory('debug');
-    proto.info = logFactory('info');
-    proto.warn = logFactory('warn');
-    proto.error = logFactory('error');
-  }
-
-  function getLogger(id) {
-    return loggers[id] || new Logger(id);
-  }
-
-  function addAppender(appender) {
-    if (appenders.push(appender) === 1) {
-      connectLoggers();
-    }
-  }
-
-  function removeAppender(appender) {
-    appenders = appenders.filter(function (a) {
-      return a !== appender;
-    });
-  }
-
-  function setLevel(level) {
-    globalDefaultLevel = level;
-    for (var key in loggers) {
-      loggers[key].setLevel(level);
-    }
-  }
-
-  function getLevel() {
-    return globalDefaultLevel;
-  }
-
-  var Logger = exports.Logger = function () {
-    function Logger(id) {
-      
-
-      var cached = loggers[id];
-      if (cached) {
-        return cached;
-      }
-
-      loggers[id] = this;
-      this.id = id;
-      this.level = globalDefaultLevel;
-    }
-
-    Logger.prototype.debug = function debug(message) {};
-
-    Logger.prototype.info = function info(message) {};
-
-    Logger.prototype.warn = function warn(message) {};
-
-    Logger.prototype.error = function error(message) {};
-
-    Logger.prototype.setLevel = function setLevel(level) {
-      this.level = level;
-    };
-
-    return Logger;
-  }();
-});
-define('aurelia-logging-console',['exports', 'aurelia-logging'], function (exports, _aureliaLogging) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.ConsoleAppender = undefined;
-
-  
-
-  var ConsoleAppender = exports.ConsoleAppender = function () {
-    function ConsoleAppender() {
-      
-    }
-
-    ConsoleAppender.prototype.debug = function debug(logger) {
-      var _console;
-
-      for (var _len = arguments.length, rest = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        rest[_key - 1] = arguments[_key];
-      }
-
-      (_console = console).debug.apply(_console, ['DEBUG [' + logger.id + ']'].concat(rest));
-    };
-
-    ConsoleAppender.prototype.info = function info(logger) {
-      var _console2;
-
-      for (var _len2 = arguments.length, rest = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-        rest[_key2 - 1] = arguments[_key2];
-      }
-
-      (_console2 = console).info.apply(_console2, ['INFO [' + logger.id + ']'].concat(rest));
-    };
-
-    ConsoleAppender.prototype.warn = function warn(logger) {
-      var _console3;
-
-      for (var _len3 = arguments.length, rest = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
-        rest[_key3 - 1] = arguments[_key3];
-      }
-
-      (_console3 = console).warn.apply(_console3, ['WARN [' + logger.id + ']'].concat(rest));
-    };
-
-    ConsoleAppender.prototype.error = function error(logger) {
-      var _console4;
-
-      for (var _len4 = arguments.length, rest = Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
-        rest[_key4 - 1] = arguments[_key4];
-      }
-
-      (_console4 = console).error.apply(_console4, ['ERROR [' + logger.id + ']'].concat(rest));
-    };
-
-    return ConsoleAppender;
-  }();
-});
 define('aurelia-loader-default',['exports', 'aurelia-loader', 'aurelia-pal', 'aurelia-metadata'], function (exports, _aureliaLoader, _aureliaPal, _aureliaMetadata) {
   'use strict';
 
@@ -14285,6 +14116,175 @@ define('aurelia-loader-default',['exports', 'aurelia-loader', 'aurelia-pal', 'au
       }));
     };
   }
+});
+define('aurelia-logging',['exports'], function (exports) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.getLogger = getLogger;
+  exports.addAppender = addAppender;
+  exports.removeAppender = removeAppender;
+  exports.setLevel = setLevel;
+  exports.getLevel = getLevel;
+
+  
+
+  var logLevel = exports.logLevel = {
+    none: 0,
+    error: 1,
+    warn: 2,
+    info: 3,
+    debug: 4
+  };
+
+  var loggers = {};
+  var appenders = [];
+  var globalDefaultLevel = logLevel.none;
+
+  function appendArgs() {
+    return [this].concat(Array.prototype.slice.call(arguments));
+  }
+
+  function logFactory(level) {
+    var threshold = logLevel[level];
+    return function () {
+      if (this.level < threshold) {
+        return;
+      }
+
+      var args = appendArgs.apply(this, arguments);
+      var i = appenders.length;
+      while (i--) {
+        var _appenders$i;
+
+        (_appenders$i = appenders[i])[level].apply(_appenders$i, args);
+      }
+    };
+  }
+
+  function connectLoggers() {
+    var proto = Logger.prototype;
+    proto.debug = logFactory('debug');
+    proto.info = logFactory('info');
+    proto.warn = logFactory('warn');
+    proto.error = logFactory('error');
+  }
+
+  function getLogger(id) {
+    return loggers[id] || new Logger(id);
+  }
+
+  function addAppender(appender) {
+    if (appenders.push(appender) === 1) {
+      connectLoggers();
+    }
+  }
+
+  function removeAppender(appender) {
+    appenders = appenders.filter(function (a) {
+      return a !== appender;
+    });
+  }
+
+  function setLevel(level) {
+    globalDefaultLevel = level;
+    for (var key in loggers) {
+      loggers[key].setLevel(level);
+    }
+  }
+
+  function getLevel() {
+    return globalDefaultLevel;
+  }
+
+  var Logger = exports.Logger = function () {
+    function Logger(id) {
+      
+
+      var cached = loggers[id];
+      if (cached) {
+        return cached;
+      }
+
+      loggers[id] = this;
+      this.id = id;
+      this.level = globalDefaultLevel;
+    }
+
+    Logger.prototype.debug = function debug(message) {};
+
+    Logger.prototype.info = function info(message) {};
+
+    Logger.prototype.warn = function warn(message) {};
+
+    Logger.prototype.error = function error(message) {};
+
+    Logger.prototype.setLevel = function setLevel(level) {
+      this.level = level;
+    };
+
+    return Logger;
+  }();
+});
+define('aurelia-logging-console',['exports', 'aurelia-logging'], function (exports, _aureliaLogging) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.ConsoleAppender = undefined;
+
+  
+
+  var ConsoleAppender = exports.ConsoleAppender = function () {
+    function ConsoleAppender() {
+      
+    }
+
+    ConsoleAppender.prototype.debug = function debug(logger) {
+      var _console;
+
+      for (var _len = arguments.length, rest = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+        rest[_key - 1] = arguments[_key];
+      }
+
+      (_console = console).debug.apply(_console, ['DEBUG [' + logger.id + ']'].concat(rest));
+    };
+
+    ConsoleAppender.prototype.info = function info(logger) {
+      var _console2;
+
+      for (var _len2 = arguments.length, rest = Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        rest[_key2 - 1] = arguments[_key2];
+      }
+
+      (_console2 = console).info.apply(_console2, ['INFO [' + logger.id + ']'].concat(rest));
+    };
+
+    ConsoleAppender.prototype.warn = function warn(logger) {
+      var _console3;
+
+      for (var _len3 = arguments.length, rest = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        rest[_key3 - 1] = arguments[_key3];
+      }
+
+      (_console3 = console).warn.apply(_console3, ['WARN [' + logger.id + ']'].concat(rest));
+    };
+
+    ConsoleAppender.prototype.error = function error(logger) {
+      var _console4;
+
+      for (var _len4 = arguments.length, rest = Array(_len4 > 1 ? _len4 - 1 : 0), _key4 = 1; _key4 < _len4; _key4++) {
+        rest[_key4 - 1] = arguments[_key4];
+      }
+
+      (_console4 = console).error.apply(_console4, ['ERROR [' + logger.id + ']'].concat(rest));
+    };
+
+    return ConsoleAppender;
+  }();
 });
 define('aurelia-metadata',['exports', 'aurelia-pal'], function (exports, _aureliaPal) {
   'use strict';
@@ -14670,221 +14670,6 @@ define('aurelia-pal',['exports'], function (exports) {
   }
   function reset() {
     exports.isInitialized = isInitialized = false;
-  }
-});
-define('aurelia-path',['exports'], function (exports) {
-  'use strict';
-
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.relativeToFile = relativeToFile;
-  exports.join = join;
-  exports.buildQueryString = buildQueryString;
-  exports.parseQueryString = parseQueryString;
-
-  var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-    return typeof obj;
-  } : function (obj) {
-    return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
-  };
-
-  function trimDots(ary) {
-    for (var i = 0; i < ary.length; ++i) {
-      var part = ary[i];
-      if (part === '.') {
-        ary.splice(i, 1);
-        i -= 1;
-      } else if (part === '..') {
-        if (i === 0 || i === 1 && ary[2] === '..' || ary[i - 1] === '..') {
-          continue;
-        } else if (i > 0) {
-          ary.splice(i - 1, 2);
-          i -= 2;
-        }
-      }
-    }
-  }
-
-  function relativeToFile(name, file) {
-    var fileParts = file && file.split('/');
-    var nameParts = name.trim().split('/');
-
-    if (nameParts[0].charAt(0) === '.' && fileParts) {
-      var normalizedBaseParts = fileParts.slice(0, fileParts.length - 1);
-      nameParts.unshift.apply(nameParts, normalizedBaseParts);
-    }
-
-    trimDots(nameParts);
-
-    return nameParts.join('/');
-  }
-
-  function join(path1, path2) {
-    if (!path1) {
-      return path2;
-    }
-
-    if (!path2) {
-      return path1;
-    }
-
-    var schemeMatch = path1.match(/^([^/]*?:)\//);
-    var scheme = schemeMatch && schemeMatch.length > 0 ? schemeMatch[1] : '';
-    path1 = path1.substr(scheme.length);
-
-    var urlPrefix = void 0;
-    if (path1.indexOf('///') === 0 && scheme === 'file:') {
-      urlPrefix = '///';
-    } else if (path1.indexOf('//') === 0) {
-      urlPrefix = '//';
-    } else if (path1.indexOf('/') === 0) {
-      urlPrefix = '/';
-    } else {
-      urlPrefix = '';
-    }
-
-    var trailingSlash = path2.slice(-1) === '/' ? '/' : '';
-
-    var url1 = path1.split('/');
-    var url2 = path2.split('/');
-    var url3 = [];
-
-    for (var i = 0, ii = url1.length; i < ii; ++i) {
-      if (url1[i] === '..') {
-        url3.pop();
-      } else if (url1[i] === '.' || url1[i] === '') {
-        continue;
-      } else {
-        url3.push(url1[i]);
-      }
-    }
-
-    for (var _i = 0, _ii = url2.length; _i < _ii; ++_i) {
-      if (url2[_i] === '..') {
-        url3.pop();
-      } else if (url2[_i] === '.' || url2[_i] === '') {
-        continue;
-      } else {
-        url3.push(url2[_i]);
-      }
-    }
-
-    return scheme + urlPrefix + url3.join('/') + trailingSlash;
-  }
-
-  var encode = encodeURIComponent;
-  var encodeKey = function encodeKey(k) {
-    return encode(k).replace('%24', '$');
-  };
-
-  function buildParam(key, value, traditional) {
-    var result = [];
-    if (value === null || value === undefined) {
-      return result;
-    }
-    if (Array.isArray(value)) {
-      for (var i = 0, l = value.length; i < l; i++) {
-        if (traditional) {
-          result.push(encodeKey(key) + '=' + encode(value[i]));
-        } else {
-          var arrayKey = key + '[' + (_typeof(value[i]) === 'object' && value[i] !== null ? i : '') + ']';
-          result = result.concat(buildParam(arrayKey, value[i]));
-        }
-      }
-    } else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && !traditional) {
-      for (var propertyName in value) {
-        result = result.concat(buildParam(key + '[' + propertyName + ']', value[propertyName]));
-      }
-    } else {
-      result.push(encodeKey(key) + '=' + encode(value));
-    }
-    return result;
-  }
-
-  function buildQueryString(params, traditional) {
-    var pairs = [];
-    var keys = Object.keys(params || {}).sort();
-    for (var i = 0, len = keys.length; i < len; i++) {
-      var key = keys[i];
-      pairs = pairs.concat(buildParam(key, params[key], traditional));
-    }
-
-    if (pairs.length === 0) {
-      return '';
-    }
-
-    return pairs.join('&');
-  }
-
-  function processScalarParam(existedParam, value) {
-    if (Array.isArray(existedParam)) {
-      existedParam.push(value);
-      return existedParam;
-    }
-    if (existedParam !== undefined) {
-      return [existedParam, value];
-    }
-
-    return value;
-  }
-
-  function parseComplexParam(queryParams, keys, value) {
-    var currentParams = queryParams;
-    var keysLastIndex = keys.length - 1;
-    for (var j = 0; j <= keysLastIndex; j++) {
-      var key = keys[j] === '' ? currentParams.length : keys[j];
-      if (j < keysLastIndex) {
-        var prevValue = !currentParams[key] || _typeof(currentParams[key]) === 'object' ? currentParams[key] : [currentParams[key]];
-        currentParams = currentParams[key] = prevValue || (isNaN(keys[j + 1]) ? {} : []);
-      } else {
-        currentParams = currentParams[key] = value;
-      }
-    }
-  }
-
-  function parseQueryString(queryString) {
-    var queryParams = {};
-    if (!queryString || typeof queryString !== 'string') {
-      return queryParams;
-    }
-
-    var query = queryString;
-    if (query.charAt(0) === '?') {
-      query = query.substr(1);
-    }
-
-    var pairs = query.replace(/\+/g, ' ').split('&');
-    for (var i = 0; i < pairs.length; i++) {
-      var pair = pairs[i].split('=');
-      var key = decodeURIComponent(pair[0]);
-      if (!key) {
-        continue;
-      }
-
-      var keys = key.split('][');
-      var keysLastIndex = keys.length - 1;
-
-      if (/\[/.test(keys[0]) && /\]$/.test(keys[keysLastIndex])) {
-        keys[keysLastIndex] = keys[keysLastIndex].replace(/\]$/, '');
-        keys = keys.shift().split('[').concat(keys);
-        keysLastIndex = keys.length - 1;
-      } else {
-        keysLastIndex = 0;
-      }
-
-      if (pair.length >= 2) {
-        var value = pair[1] ? decodeURIComponent(pair[1]) : '';
-        if (keysLastIndex) {
-          parseComplexParam(queryParams, keys, value);
-        } else {
-          queryParams[key] = processScalarParam(queryParams[key], value);
-        }
-      } else {
-        queryParams[key] = true;
-      }
-    }
-    return queryParams;
   }
 });
 define('aurelia-pal-browser',['exports', 'aurelia-pal'], function (exports, _aureliaPal) {
@@ -15367,6 +15152,221 @@ define('aurelia-pal-browser',['exports', 'aurelia-pal'], function (exports, _aur
         }
       });
     });
+  }
+});
+define('aurelia-path',['exports'], function (exports) {
+  'use strict';
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.relativeToFile = relativeToFile;
+  exports.join = join;
+  exports.buildQueryString = buildQueryString;
+  exports.parseQueryString = parseQueryString;
+
+  var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+    return typeof obj;
+  } : function (obj) {
+    return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
+  };
+
+  function trimDots(ary) {
+    for (var i = 0; i < ary.length; ++i) {
+      var part = ary[i];
+      if (part === '.') {
+        ary.splice(i, 1);
+        i -= 1;
+      } else if (part === '..') {
+        if (i === 0 || i === 1 && ary[2] === '..' || ary[i - 1] === '..') {
+          continue;
+        } else if (i > 0) {
+          ary.splice(i - 1, 2);
+          i -= 2;
+        }
+      }
+    }
+  }
+
+  function relativeToFile(name, file) {
+    var fileParts = file && file.split('/');
+    var nameParts = name.trim().split('/');
+
+    if (nameParts[0].charAt(0) === '.' && fileParts) {
+      var normalizedBaseParts = fileParts.slice(0, fileParts.length - 1);
+      nameParts.unshift.apply(nameParts, normalizedBaseParts);
+    }
+
+    trimDots(nameParts);
+
+    return nameParts.join('/');
+  }
+
+  function join(path1, path2) {
+    if (!path1) {
+      return path2;
+    }
+
+    if (!path2) {
+      return path1;
+    }
+
+    var schemeMatch = path1.match(/^([^/]*?:)\//);
+    var scheme = schemeMatch && schemeMatch.length > 0 ? schemeMatch[1] : '';
+    path1 = path1.substr(scheme.length);
+
+    var urlPrefix = void 0;
+    if (path1.indexOf('///') === 0 && scheme === 'file:') {
+      urlPrefix = '///';
+    } else if (path1.indexOf('//') === 0) {
+      urlPrefix = '//';
+    } else if (path1.indexOf('/') === 0) {
+      urlPrefix = '/';
+    } else {
+      urlPrefix = '';
+    }
+
+    var trailingSlash = path2.slice(-1) === '/' ? '/' : '';
+
+    var url1 = path1.split('/');
+    var url2 = path2.split('/');
+    var url3 = [];
+
+    for (var i = 0, ii = url1.length; i < ii; ++i) {
+      if (url1[i] === '..') {
+        url3.pop();
+      } else if (url1[i] === '.' || url1[i] === '') {
+        continue;
+      } else {
+        url3.push(url1[i]);
+      }
+    }
+
+    for (var _i = 0, _ii = url2.length; _i < _ii; ++_i) {
+      if (url2[_i] === '..') {
+        url3.pop();
+      } else if (url2[_i] === '.' || url2[_i] === '') {
+        continue;
+      } else {
+        url3.push(url2[_i]);
+      }
+    }
+
+    return scheme + urlPrefix + url3.join('/') + trailingSlash;
+  }
+
+  var encode = encodeURIComponent;
+  var encodeKey = function encodeKey(k) {
+    return encode(k).replace('%24', '$');
+  };
+
+  function buildParam(key, value, traditional) {
+    var result = [];
+    if (value === null || value === undefined) {
+      return result;
+    }
+    if (Array.isArray(value)) {
+      for (var i = 0, l = value.length; i < l; i++) {
+        if (traditional) {
+          result.push(encodeKey(key) + '=' + encode(value[i]));
+        } else {
+          var arrayKey = key + '[' + (_typeof(value[i]) === 'object' && value[i] !== null ? i : '') + ']';
+          result = result.concat(buildParam(arrayKey, value[i]));
+        }
+      }
+    } else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' && !traditional) {
+      for (var propertyName in value) {
+        result = result.concat(buildParam(key + '[' + propertyName + ']', value[propertyName]));
+      }
+    } else {
+      result.push(encodeKey(key) + '=' + encode(value));
+    }
+    return result;
+  }
+
+  function buildQueryString(params, traditional) {
+    var pairs = [];
+    var keys = Object.keys(params || {}).sort();
+    for (var i = 0, len = keys.length; i < len; i++) {
+      var key = keys[i];
+      pairs = pairs.concat(buildParam(key, params[key], traditional));
+    }
+
+    if (pairs.length === 0) {
+      return '';
+    }
+
+    return pairs.join('&');
+  }
+
+  function processScalarParam(existedParam, value) {
+    if (Array.isArray(existedParam)) {
+      existedParam.push(value);
+      return existedParam;
+    }
+    if (existedParam !== undefined) {
+      return [existedParam, value];
+    }
+
+    return value;
+  }
+
+  function parseComplexParam(queryParams, keys, value) {
+    var currentParams = queryParams;
+    var keysLastIndex = keys.length - 1;
+    for (var j = 0; j <= keysLastIndex; j++) {
+      var key = keys[j] === '' ? currentParams.length : keys[j];
+      if (j < keysLastIndex) {
+        var prevValue = !currentParams[key] || _typeof(currentParams[key]) === 'object' ? currentParams[key] : [currentParams[key]];
+        currentParams = currentParams[key] = prevValue || (isNaN(keys[j + 1]) ? {} : []);
+      } else {
+        currentParams = currentParams[key] = value;
+      }
+    }
+  }
+
+  function parseQueryString(queryString) {
+    var queryParams = {};
+    if (!queryString || typeof queryString !== 'string') {
+      return queryParams;
+    }
+
+    var query = queryString;
+    if (query.charAt(0) === '?') {
+      query = query.substr(1);
+    }
+
+    var pairs = query.replace(/\+/g, ' ').split('&');
+    for (var i = 0; i < pairs.length; i++) {
+      var pair = pairs[i].split('=');
+      var key = decodeURIComponent(pair[0]);
+      if (!key) {
+        continue;
+      }
+
+      var keys = key.split('][');
+      var keysLastIndex = keys.length - 1;
+
+      if (/\[/.test(keys[0]) && /\]$/.test(keys[keysLastIndex])) {
+        keys[keysLastIndex] = keys[keysLastIndex].replace(/\]$/, '');
+        keys = keys.shift().split('[').concat(keys);
+        keysLastIndex = keys.length - 1;
+      } else {
+        keysLastIndex = 0;
+      }
+
+      if (pair.length >= 2) {
+        var value = pair[1] ? decodeURIComponent(pair[1]) : '';
+        if (keysLastIndex) {
+          parseComplexParam(queryParams, keys, value);
+        } else {
+          queryParams[key] = processScalarParam(queryParams[key], value);
+        }
+      } else {
+        queryParams[key] = true;
+      }
+    }
+    return queryParams;
   }
 });
 define('aurelia-polyfills',['aurelia-pal'], function (_aureliaPal) {
@@ -18605,6 +18605,165 @@ define('aurelia-router',['exports', 'aurelia-logging', 'aurelia-route-recognizer
     }
   }
 });
+define('aurelia-rxjs',["require", "exports", 'aurelia-framework', 'aurelia-binding', 'aurelia-binding'], function (require, exports, aurelia_framework_1, aurelia_binding_1, aurelia_binding_2) {
+    "use strict";
+    var logger = aurelia_framework_1.LogManager.getLogger('aurelia-rxjs');
+    function configure(frameworkConfig) {
+        var viewResources = frameworkConfig.aurelia.resources;
+        var bindingBehaviorInstance = frameworkConfig.container.get(ObservableSignalBindingBehavior);
+        viewResources.registerBindingBehavior('observableSignal', bindingBehaviorInstance);
+        var rxBindingFunctionInstance = frameworkConfig.container.get(RxBindingFunction);
+        if (typeof viewResources.registerBindingFunction === 'function') {
+            viewResources.registerBindingFunction('@rx', rxBindingFunctionInstance);
+        }
+        else {
+            throw new Error('You need to load the aurelia-binding-functions plugin before aurelia-observable-binding-function.');
+        }
+    }
+    exports.configure = configure;
+    var RxBindingFunction = (function () {
+        function RxBindingFunction() {
+        }
+        RxBindingFunction.prototype.connect = function (callScope, binding, scope) {
+            logger.debug('[connect] start connect for VALUE:', callScope.args[0].name);
+            var observable = callScope.args[0].evaluate(scope, binding.lookupFunctions, true);
+            if (observable && typeof observable.subscribe === 'function') {
+                binding.observeProperty(observable, 'value');
+            }
+            else {
+                logger.error('[connect] the argument passed in to the binding is not an Observable', observable);
+            }
+        };
+        RxBindingFunction.prototype.assign = function (callScope, scope, value, lookupFunctions) {
+            var observable = callScope.args[0].evaluate(scope, lookupFunctions, true);
+            if (observable && typeof observable.next === 'function') {
+                logger.debug('[assign]', callScope.args[0].name, value, callScope, scope);
+                if (observable.value !== value)
+                    observable.next(value);
+            }
+            else {
+                logger.error('[assign] trying to set a value but no underlying Observer exists for:', callScope.args[0].name);
+                logger.error("Binding expression \"" + callScope.args[0].name + "\" cannot be assigned to.", callScope);
+            }
+        };
+        RxBindingFunction.prototype.evaluate = function (callScope, scope, lookupFunctions, mustEvaluate) {
+            var observable = callScope.args[0].evaluate(scope, lookupFunctions, true);
+            if (observable) {
+                if (!observable._aureliaIsListener) {
+                    if (typeof observable.subscribe === 'function') {
+                        logger.debug('[evaluate] retrieve last value of:', callScope.args[0].name, observable.value, observable);
+                        return observable.value;
+                    }
+                    logger.error('[evaluate] trying to get a value but no underlying observable exists for:', callScope.args[0].name);
+                }
+                else {
+                    if (typeof observable.next === 'function') {
+                        var event_1 = scope.overrideContext.$event;
+                        if (!event_1) {
+                            return observable;
+                        }
+                        var argsToEval = Array.from(callScope.args);
+                        argsToEval.shift();
+                        var args = argsToEval.map(function (arg) { return arg.evaluate(scope, lookupFunctions); });
+                        logger.debug('[evaluate] trigger an action of:', callScope.args[0].name, { event: event_1, args: args });
+                        observable.next({ event: event_1, arguments: args, scope: scope });
+                        return;
+                    }
+                    else {
+                        logger.error('[evaluate] trying to trigger an action but no underlying subject exists:', callScope.args[0].name);
+                    }
+                }
+            }
+            else {
+                logger.error('[evaluate] trying to get a value but no underlying observable/subject exists for:', callScope.args[0].name);
+            }
+        };
+        RxBindingFunction.prototype.bind = function (callScope, binding, scope, lookupFunctions) {
+            var observable = callScope.args[0].evaluate(scope, lookupFunctions, true);
+            logger.debug("[bind] [" + callScope.name + "]", callScope.args[0].name, callScope, binding, scope, 'value of target', observable);
+            if (observable && typeof observable.subscribe === 'function') {
+                binding._observableReference = observable;
+                observable._aureliaBindCount = (observable._aureliaBindCount || 0) + 1;
+                if (binding instanceof aurelia_binding_1.Listener) {
+                    observable._aureliaIsListener = true;
+                }
+                else if (!observable._aureliaSubscription) {
+                    logger.debug('[bind] will subscribe to', callScope.args[0].name);
+                    var subscription = observable
+                        .subscribe(function (value) { return observable.value = value; });
+                    observable._aureliaSubscription = subscription;
+                }
+            }
+        };
+        RxBindingFunction.prototype.unbind = function (callScope, binding, scope) {
+            var observable = binding._observableReference;
+            if (observable && typeof observable.subscribe === 'function') {
+                console.assert(observable._aureliaBindCount !== undefined && observable._aureliaBindCount > 0, '_aureliaBindCount is wrong');
+                observable._aureliaBindCount = (observable._aureliaBindCount || 0) - 1;
+                if (observable._aureliaBindCount === 0 && observable._aureliaSubscription) {
+                    logger.debug("[unbind] [" + callScope.name + "] unsubscribing", callScope.args[0].name, callScope, binding, scope, new Date());
+                    observable._aureliaSubscription.unsubscribe();
+                    observable._aureliaSubscription = undefined;
+                    observable._aureliaBindCount = undefined;
+                    observable.value = undefined;
+                }
+            }
+            else {
+                logger.debug("[unbind] [" + callScope.name + "] NOT unsubscribing", callScope.args[0].name, callScope, binding, scope, new Date());
+            }
+        };
+        return RxBindingFunction;
+    }());
+    exports.RxBindingFunction = RxBindingFunction;
+    var ObservableSignalBindingBehavior = (function () {
+        function ObservableSignalBindingBehavior() {
+        }
+        ObservableSignalBindingBehavior.prototype.bind = function (binding, source) {
+            var observables = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                observables[_i - 2] = arguments[_i];
+            }
+            if (!binding.updateTarget) {
+                throw new Error('Only property bindings and string interpolation bindings can be signaled.  Trigger, delegate and call bindings cannot be signaled.');
+            }
+            if (!observables || observables.length === 0)
+                throw new Error('Observable name is required.');
+            var signalingObservers = new Array();
+            for (var _a = 0, observables_1 = observables; _a < observables_1.length; _a++) {
+                var observable = observables_1[_a];
+                signalingObservers.push(observable.subscribe(function (next) { return binding.call(aurelia_binding_2.sourceContext); }));
+            }
+            binding.signalingObservers = signalingObservers;
+        };
+        ObservableSignalBindingBehavior.prototype.unbind = function (binding, source) {
+            if (binding.signalingObservers) {
+                for (var _i = 0, _a = binding.signalingObservers; _i < _a.length; _i++) {
+                    var subscription = _a[_i];
+                    subscription.unsubscribe();
+                }
+                binding.signalingObservers = undefined;
+            }
+        };
+        return ObservableSignalBindingBehavior;
+    }());
+    exports.ObservableSignalBindingBehavior = ObservableSignalBindingBehavior;
+    var evalListCache = [[], [0], [0, 0], [0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0, 0]];
+    function evalList(scope, list, lookupFunctions) {
+        var length = list.length, cacheLength, i;
+        for (cacheLength = evalListCache.length; cacheLength <= length; ++cacheLength) {
+            evalListCache.push([]);
+        }
+        var result = evalListCache[length];
+        for (i = 0; i < length; ++i) {
+            result[i] = list[i].evaluate(scope, lookupFunctions);
+        }
+        return result;
+    }
+    exports.evalList = evalList;
+});
+//# sourceMappingURL=index.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzIjpbImluZGV4LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0lBUUEsSUFBTSxNQUFNLEdBQUcsOEJBQVUsQ0FBQyxTQUFTLENBQUMsY0FBYyxDQUFDLENBQUE7SUFFbkQsbUJBQTBCLGVBQXVDO1FBQy9ELElBQU0sYUFBYSxHQUFHLGVBQWUsQ0FBQyxPQUFPLENBQUMsU0FBUyxDQUFBO1FBQ3ZELElBQU0sdUJBQXVCLEdBQUcsZUFBZSxDQUFDLFNBQVMsQ0FBQyxHQUFHLENBQUMsK0JBQStCLENBQUMsQ0FBQTtRQUM5RixhQUFhLENBQUMsdUJBQXVCLENBQUMsa0JBQWtCLEVBQUUsdUJBQXVCLENBQUMsQ0FBQTtRQUVsRixJQUFNLHlCQUF5QixHQUFHLGVBQWUsQ0FBQyxTQUFTLENBQUMsR0FBRyxDQUFDLGlCQUFpQixDQUFDLENBQUE7UUFDbEYsRUFBRSxDQUFDLENBQUMsT0FBTyxhQUFhLENBQUMsdUJBQXVCLEtBQUssVUFBVSxDQUFDLENBQUMsQ0FBQztZQUNoRSxhQUFhLENBQUMsdUJBQXVCLENBQUMsS0FBSyxFQUFFLHlCQUF5QixDQUFDLENBQUE7UUFDekUsQ0FBQztRQUFDLElBQUksQ0FBQyxDQUFDO1lBQ04sTUFBTSxJQUFJLEtBQUssQ0FBQyxtR0FBbUcsQ0FBQyxDQUFBO1FBQ3RILENBQUM7SUFDSCxDQUFDO0lBWGUsaUJBQVMsWUFXeEIsQ0FBQTtJQUVEO1FBQUE7UUF1SkEsQ0FBQztRQXRKQyxtQ0FBTyxHQUFQLFVBQVEsU0FBb0IsRUFBRSxPQUFnQixFQUFFLEtBQVk7WUFDMUQsTUFBTSxDQUFDLEtBQUssQ0FBQyxvQ0FBb0MsRUFBRSxTQUFTLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQyxDQUFDLElBQUksQ0FBQyxDQUFBO1lBRTFFLElBQU0sVUFBVSxHQUFHLFNBQVMsQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUMsUUFBUSxDQUFDLEtBQUssRUFBRSxP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
+
 define('aurelia-task-queue',['exports', 'aurelia-pal'], function (exports, _aureliaPal) {
   'use strict';
 
@@ -27587,38 +27746,6 @@ define('aurelia-testing/wait',['exports'], function (exports) {
     }, options);
   }
 });
-define('aurelia-dialog/aurelia-dialog',["require", "exports", "./dialog-configuration", "./ux-dialog", "./ux-dialog-header", "./ux-dialog-body", "./ux-dialog-footer", "./attach-focus", "./dialog-settings", "./dialog-configuration", "./renderer", "./dialog-cancel-error", "./dialog-service", "./dialog-controller"], function (require, exports, dialog_configuration_1, ux_dialog_1, ux_dialog_header_1, ux_dialog_body_1, ux_dialog_footer_1, attach_focus_1, dialog_settings_1, dialog_configuration_2, renderer_1, dialog_cancel_error_1, dialog_service_1, dialog_controller_1) {
-    "use strict";
-    function __export(m) {
-        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-    }
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function configure(frameworkConfig, callback) {
-        var applyConfig = null;
-        var config = new dialog_configuration_1.DialogConfiguration(frameworkConfig, function (apply) { applyConfig = apply; });
-        if (typeof callback === 'function') {
-            callback(config);
-        }
-        else {
-            config.useDefaults();
-        }
-        applyConfig();
-    }
-    exports.configure = configure;
-    __export(ux_dialog_1);
-    __export(ux_dialog_header_1);
-    __export(ux_dialog_body_1);
-    __export(ux_dialog_footer_1);
-    __export(attach_focus_1);
-    __export(dialog_settings_1);
-    __export(dialog_configuration_2);
-    __export(renderer_1);
-    __export(dialog_cancel_error_1);
-    __export(dialog_service_1);
-    __export(dialog_controller_1);
-});
-;define('aurelia-dialog', ['aurelia-dialog/aurelia-dialog'], function (main) { return main; });
-
 // Exports
 define('aurelia-validation/aurelia-validation',["require", "exports", "./get-target-dom-element", "./property-info", "./validate-binding-behavior", "./validate-result", "./validate-trigger", "./validation-controller", "./validation-controller-factory", "./validation-errors-custom-attribute", "./validation-renderer-custom-attribute", "./validator", "./implementation/rules", "./implementation/standard-validator", "./implementation/validation-messages", "./implementation/validation-parser", "./implementation/validation-rules", "aurelia-pal", "./validator", "./implementation/standard-validator", "./implementation/validation-parser", "./implementation/validation-rules"], function (require, exports, get_target_dom_element_1, property_info_1, validate_binding_behavior_1, validate_result_1, validate_trigger_1, validation_controller_1, validation_controller_factory_1, validation_errors_custom_attribute_1, validation_renderer_custom_attribute_1, validator_1, rules_1, standard_validator_1, validation_messages_1, validation_parser_1, validation_rules_1, aurelia_pal_1, validator_2, standard_validator_2, validation_parser_2, validation_rules_2) {
     "use strict";
@@ -27687,4 +27814,690 @@ define('aurelia-validation/aurelia-validation',["require", "exports", "./get-tar
 });
 ;define('aurelia-validation', ['aurelia-validation/aurelia-validation'], function (main) { return main; });
 
-function _aureliaConfigureModuleLoader(){requirejs.config({"baseUrl":"src/","paths":{"aurelia-bootstrapper":"../node_modules\\aurelia-bootstrapper\\dist\\amd\\aurelia-bootstrapper","aurelia-binding":"../node_modules\\aurelia-binding\\dist\\amd\\aurelia-binding","aurelia-event-aggregator":"../node_modules\\aurelia-event-aggregator\\dist\\amd\\aurelia-event-aggregator","aurelia-dependency-injection":"../node_modules\\aurelia-dependency-injection\\dist\\amd\\aurelia-dependency-injection","aurelia-framework":"../node_modules\\aurelia-framework\\dist\\amd\\aurelia-framework","aurelia-fetch-client":"../node_modules\\aurelia-fetch-client\\dist\\amd\\aurelia-fetch-client","aurelia-history":"../node_modules\\aurelia-history\\dist\\amd\\aurelia-history","aurelia-history-browser":"../node_modules\\aurelia-history-browser\\dist\\amd\\aurelia-history-browser","aurelia-loader":"../node_modules\\aurelia-loader\\dist\\amd\\aurelia-loader","aurelia-logging":"../node_modules\\aurelia-logging\\dist\\amd\\aurelia-logging","aurelia-logging-console":"../node_modules\\aurelia-logging-console\\dist\\amd\\aurelia-logging-console","aurelia-loader-default":"../node_modules\\aurelia-loader-default\\dist\\amd\\aurelia-loader-default","aurelia-metadata":"../node_modules\\aurelia-metadata\\dist\\amd\\aurelia-metadata","aurelia-pal":"../node_modules\\aurelia-pal\\dist\\amd\\aurelia-pal","aurelia-path":"../node_modules\\aurelia-path\\dist\\amd\\aurelia-path","aurelia-pal-browser":"../node_modules\\aurelia-pal-browser\\dist\\amd\\aurelia-pal-browser","aurelia-polyfills":"../node_modules\\aurelia-polyfills\\dist\\amd\\aurelia-polyfills","aurelia-route-recognizer":"../node_modules\\aurelia-route-recognizer\\dist\\amd\\aurelia-route-recognizer","aurelia-router":"../node_modules\\aurelia-router\\dist\\amd\\aurelia-router","aurelia-task-queue":"../node_modules\\aurelia-task-queue\\dist\\amd\\aurelia-task-queue","aurelia-templating":"../node_modules\\aurelia-templating\\dist\\amd\\aurelia-templating","aurelia-templating-binding":"../node_modules\\aurelia-templating-binding\\dist\\amd\\aurelia-templating-binding","text":"../node_modules\\text\\text","app-bundle":"../scripts/app-bundle"},"packages":[{"name":"aurelia-templating-resources","location":"../node_modules/aurelia-templating-resources/dist/amd","main":"aurelia-templating-resources"},{"name":"aurelia-templating-router","location":"../node_modules/aurelia-templating-router/dist/amd","main":"aurelia-templating-router"},{"name":"aurelia-testing","location":"../node_modules/aurelia-testing/dist/amd","main":"aurelia-testing"},{"name":"aurelia-dialog","location":"../node_modules/aurelia-dialog/dist/amd","main":"aurelia-dialog"},{"name":"aurelia-validation","location":"../node_modules/aurelia-validation/dist/amd","main":"aurelia-validation"}],"stubModules":["text"],"shim":{},"bundles":{"app-bundle":["models/image","components/image-dlg/image-dlg","app","environment","main","resources/index","services/data-service","components/data/data","components/form/form","components/hello/hello","components/spinner/spinner","views/data-view/data-view","views/form-view/form-view","views/home-view/home-view","views/hello-view/hello-view","aurelia-dialog/dialog-configuration","aurelia-dialog/renderer","aurelia-dialog/dialog-settings","aurelia-dialog/dialog-renderer","aurelia-dialog/ux-dialog","aurelia-dialog/ux-dialog-header","aurelia-dialog/dialog-controller","aurelia-dialog/lifecycle","aurelia-dialog/dialog-cancel-error","aurelia-dialog/ux-dialog-body","aurelia-dialog/ux-dialog-footer","aurelia-dialog/attach-focus","aurelia-dialog/dialog-service","aurelia-validation/get-target-dom-element","aurelia-validation/property-info","aurelia-validation/validate-binding-behavior","aurelia-validation/validate-trigger","aurelia-validation/validate-binding-behavior-base","aurelia-validation/validation-controller","aurelia-validation/validator","aurelia-validation/validate-result","aurelia-validation/validation-controller-factory","aurelia-validation/validation-errors-custom-attribute","aurelia-validation/validation-renderer-custom-attribute","aurelia-validation/implementation/rules","aurelia-validation/implementation/standard-validator","aurelia-validation/implementation/validation-messages","aurelia-validation/implementation/validation-parser","aurelia-validation/implementation/util","aurelia-validation/implementation/validation-rules"]}})}
+define('aurelia-dialog/aurelia-dialog',["require", "exports", "./dialog-configuration", "./ux-dialog", "./ux-dialog-header", "./ux-dialog-body", "./ux-dialog-footer", "./attach-focus", "./dialog-settings", "./dialog-configuration", "./renderer", "./dialog-cancel-error", "./dialog-service", "./dialog-controller"], function (require, exports, dialog_configuration_1, ux_dialog_1, ux_dialog_header_1, ux_dialog_body_1, ux_dialog_footer_1, attach_focus_1, dialog_settings_1, dialog_configuration_2, renderer_1, dialog_cancel_error_1, dialog_service_1, dialog_controller_1) {
+    "use strict";
+    function __export(m) {
+        for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+    }
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function configure(frameworkConfig, callback) {
+        var applyConfig = null;
+        var config = new dialog_configuration_1.DialogConfiguration(frameworkConfig, function (apply) { applyConfig = apply; });
+        if (typeof callback === 'function') {
+            callback(config);
+        }
+        else {
+            config.useDefaults();
+        }
+        applyConfig();
+    }
+    exports.configure = configure;
+    __export(ux_dialog_1);
+    __export(ux_dialog_header_1);
+    __export(ux_dialog_body_1);
+    __export(ux_dialog_footer_1);
+    __export(attach_focus_1);
+    __export(dialog_settings_1);
+    __export(dialog_configuration_2);
+    __export(renderer_1);
+    __export(dialog_cancel_error_1);
+    __export(dialog_service_1);
+    __export(dialog_controller_1);
+});
+;define('aurelia-dialog', ['aurelia-dialog/aurelia-dialog'], function (main) { return main; });
+
+define('rxjs/Rx',['require','exports','module','./Subject','./Observable','./add/observable/bindCallback','./add/observable/bindNodeCallback','./add/observable/combineLatest','./add/observable/concat','./add/observable/defer','./add/observable/empty','./add/observable/forkJoin','./add/observable/from','./add/observable/fromEvent','./add/observable/fromEventPattern','./add/observable/fromPromise','./add/observable/generate','./add/observable/if','./add/observable/interval','./add/observable/merge','./add/observable/race','./add/observable/never','./add/observable/of','./add/observable/onErrorResumeNext','./add/observable/pairs','./add/observable/range','./add/observable/using','./add/observable/throw','./add/observable/timer','./add/observable/zip','./add/observable/dom/ajax','./add/observable/dom/webSocket','./add/operator/buffer','./add/operator/bufferCount','./add/operator/bufferTime','./add/operator/bufferToggle','./add/operator/bufferWhen','./add/operator/catch','./add/operator/combineAll','./add/operator/combineLatest','./add/operator/concat','./add/operator/concatAll','./add/operator/concatMap','./add/operator/concatMapTo','./add/operator/count','./add/operator/dematerialize','./add/operator/debounce','./add/operator/debounceTime','./add/operator/defaultIfEmpty','./add/operator/delay','./add/operator/delayWhen','./add/operator/distinct','./add/operator/distinctUntilChanged','./add/operator/distinctUntilKeyChanged','./add/operator/do','./add/operator/exhaust','./add/operator/exhaustMap','./add/operator/expand','./add/operator/elementAt','./add/operator/filter','./add/operator/finally','./add/operator/find','./add/operator/findIndex','./add/operator/first','./add/operator/groupBy','./add/operator/ignoreElements','./add/operator/isEmpty','./add/operator/audit','./add/operator/auditTime','./add/operator/last','./add/operator/let','./add/operator/every','./add/operator/map','./add/operator/mapTo','./add/operator/materialize','./add/operator/max','./add/operator/merge','./add/operator/mergeAll','./add/operator/mergeMap','./add/operator/mergeMapTo','./add/operator/mergeScan','./add/operator/min','./add/operator/multicast','./add/operator/observeOn','./add/operator/onErrorResumeNext','./add/operator/pairwise','./add/operator/partition','./add/operator/pluck','./add/operator/publish','./add/operator/publishBehavior','./add/operator/publishReplay','./add/operator/publishLast','./add/operator/race','./add/operator/reduce','./add/operator/repeat','./add/operator/repeatWhen','./add/operator/retry','./add/operator/retryWhen','./add/operator/sample','./add/operator/sampleTime','./add/operator/scan','./add/operator/sequenceEqual','./add/operator/share','./add/operator/shareReplay','./add/operator/single','./add/operator/skip','./add/operator/skipLast','./add/operator/skipUntil','./add/operator/skipWhile','./add/operator/startWith','./add/operator/subscribeOn','./add/operator/switch','./add/operator/switchMap','./add/operator/switchMapTo','./add/operator/take','./add/operator/takeLast','./add/operator/takeUntil','./add/operator/takeWhile','./add/operator/throttle','./add/operator/throttleTime','./add/operator/timeInterval','./add/operator/timeout','./add/operator/timeoutWith','./add/operator/timestamp','./add/operator/toArray','./add/operator/toPromise','./add/operator/window','./add/operator/windowCount','./add/operator/windowTime','./add/operator/windowToggle','./add/operator/windowWhen','./add/operator/withLatestFrom','./add/operator/zip','./add/operator/zipAll','./Subscription','./Subscriber','./AsyncSubject','./ReplaySubject','./BehaviorSubject','./observable/ConnectableObservable','./Notification','./util/EmptyError','./util/ArgumentOutOfRangeError','./util/ObjectUnsubscribedError','./util/TimeoutError','./util/UnsubscriptionError','./operator/timeInterval','./operator/timestamp','./testing/TestScheduler','./scheduler/VirtualTimeScheduler','./observable/dom/AjaxObservable','./scheduler/asap','./scheduler/async','./scheduler/queue','./scheduler/animationFrame','./symbol/rxSubscriber','./symbol/iterator','./symbol/observable'],function (require, exports, module) {"use strict";
+/* tslint:disable:no-unused-variable */
+// Subject imported before Observable to bypass circular dependency issue since
+// Subject extends Observable and Observable references Subject in it's
+// definition
+var Subject_1 = require('./Subject');
+exports.Subject = Subject_1.Subject;
+exports.AnonymousSubject = Subject_1.AnonymousSubject;
+/* tslint:enable:no-unused-variable */
+var Observable_1 = require('./Observable');
+exports.Observable = Observable_1.Observable;
+// statics
+/* tslint:disable:no-use-before-declare */
+require('./add/observable/bindCallback');
+require('./add/observable/bindNodeCallback');
+require('./add/observable/combineLatest');
+require('./add/observable/concat');
+require('./add/observable/defer');
+require('./add/observable/empty');
+require('./add/observable/forkJoin');
+require('./add/observable/from');
+require('./add/observable/fromEvent');
+require('./add/observable/fromEventPattern');
+require('./add/observable/fromPromise');
+require('./add/observable/generate');
+require('./add/observable/if');
+require('./add/observable/interval');
+require('./add/observable/merge');
+require('./add/observable/race');
+require('./add/observable/never');
+require('./add/observable/of');
+require('./add/observable/onErrorResumeNext');
+require('./add/observable/pairs');
+require('./add/observable/range');
+require('./add/observable/using');
+require('./add/observable/throw');
+require('./add/observable/timer');
+require('./add/observable/zip');
+//dom
+require('./add/observable/dom/ajax');
+require('./add/observable/dom/webSocket');
+//operators
+require('./add/operator/buffer');
+require('./add/operator/bufferCount');
+require('./add/operator/bufferTime');
+require('./add/operator/bufferToggle');
+require('./add/operator/bufferWhen');
+require('./add/operator/catch');
+require('./add/operator/combineAll');
+require('./add/operator/combineLatest');
+require('./add/operator/concat');
+require('./add/operator/concatAll');
+require('./add/operator/concatMap');
+require('./add/operator/concatMapTo');
+require('./add/operator/count');
+require('./add/operator/dematerialize');
+require('./add/operator/debounce');
+require('./add/operator/debounceTime');
+require('./add/operator/defaultIfEmpty');
+require('./add/operator/delay');
+require('./add/operator/delayWhen');
+require('./add/operator/distinct');
+require('./add/operator/distinctUntilChanged');
+require('./add/operator/distinctUntilKeyChanged');
+require('./add/operator/do');
+require('./add/operator/exhaust');
+require('./add/operator/exhaustMap');
+require('./add/operator/expand');
+require('./add/operator/elementAt');
+require('./add/operator/filter');
+require('./add/operator/finally');
+require('./add/operator/find');
+require('./add/operator/findIndex');
+require('./add/operator/first');
+require('./add/operator/groupBy');
+require('./add/operator/ignoreElements');
+require('./add/operator/isEmpty');
+require('./add/operator/audit');
+require('./add/operator/auditTime');
+require('./add/operator/last');
+require('./add/operator/let');
+require('./add/operator/every');
+require('./add/operator/map');
+require('./add/operator/mapTo');
+require('./add/operator/materialize');
+require('./add/operator/max');
+require('./add/operator/merge');
+require('./add/operator/mergeAll');
+require('./add/operator/mergeMap');
+require('./add/operator/mergeMapTo');
+require('./add/operator/mergeScan');
+require('./add/operator/min');
+require('./add/operator/multicast');
+require('./add/operator/observeOn');
+require('./add/operator/onErrorResumeNext');
+require('./add/operator/pairwise');
+require('./add/operator/partition');
+require('./add/operator/pluck');
+require('./add/operator/publish');
+require('./add/operator/publishBehavior');
+require('./add/operator/publishReplay');
+require('./add/operator/publishLast');
+require('./add/operator/race');
+require('./add/operator/reduce');
+require('./add/operator/repeat');
+require('./add/operator/repeatWhen');
+require('./add/operator/retry');
+require('./add/operator/retryWhen');
+require('./add/operator/sample');
+require('./add/operator/sampleTime');
+require('./add/operator/scan');
+require('./add/operator/sequenceEqual');
+require('./add/operator/share');
+require('./add/operator/shareReplay');
+require('./add/operator/single');
+require('./add/operator/skip');
+require('./add/operator/skipLast');
+require('./add/operator/skipUntil');
+require('./add/operator/skipWhile');
+require('./add/operator/startWith');
+require('./add/operator/subscribeOn');
+require('./add/operator/switch');
+require('./add/operator/switchMap');
+require('./add/operator/switchMapTo');
+require('./add/operator/take');
+require('./add/operator/takeLast');
+require('./add/operator/takeUntil');
+require('./add/operator/takeWhile');
+require('./add/operator/throttle');
+require('./add/operator/throttleTime');
+require('./add/operator/timeInterval');
+require('./add/operator/timeout');
+require('./add/operator/timeoutWith');
+require('./add/operator/timestamp');
+require('./add/operator/toArray');
+require('./add/operator/toPromise');
+require('./add/operator/window');
+require('./add/operator/windowCount');
+require('./add/operator/windowTime');
+require('./add/operator/windowToggle');
+require('./add/operator/windowWhen');
+require('./add/operator/withLatestFrom');
+require('./add/operator/zip');
+require('./add/operator/zipAll');
+/* tslint:disable:no-unused-variable */
+var Subscription_1 = require('./Subscription');
+exports.Subscription = Subscription_1.Subscription;
+var Subscriber_1 = require('./Subscriber');
+exports.Subscriber = Subscriber_1.Subscriber;
+var AsyncSubject_1 = require('./AsyncSubject');
+exports.AsyncSubject = AsyncSubject_1.AsyncSubject;
+var ReplaySubject_1 = require('./ReplaySubject');
+exports.ReplaySubject = ReplaySubject_1.ReplaySubject;
+var BehaviorSubject_1 = require('./BehaviorSubject');
+exports.BehaviorSubject = BehaviorSubject_1.BehaviorSubject;
+var ConnectableObservable_1 = require('./observable/ConnectableObservable');
+exports.ConnectableObservable = ConnectableObservable_1.ConnectableObservable;
+var Notification_1 = require('./Notification');
+exports.Notification = Notification_1.Notification;
+var EmptyError_1 = require('./util/EmptyError');
+exports.EmptyError = EmptyError_1.EmptyError;
+var ArgumentOutOfRangeError_1 = require('./util/ArgumentOutOfRangeError');
+exports.ArgumentOutOfRangeError = ArgumentOutOfRangeError_1.ArgumentOutOfRangeError;
+var ObjectUnsubscribedError_1 = require('./util/ObjectUnsubscribedError');
+exports.ObjectUnsubscribedError = ObjectUnsubscribedError_1.ObjectUnsubscribedError;
+var TimeoutError_1 = require('./util/TimeoutError');
+exports.TimeoutError = TimeoutError_1.TimeoutError;
+var UnsubscriptionError_1 = require('./util/UnsubscriptionError');
+exports.UnsubscriptionError = UnsubscriptionError_1.UnsubscriptionError;
+var timeInterval_1 = require('./operator/timeInterval');
+exports.TimeInterval = timeInterval_1.TimeInterval;
+var timestamp_1 = require('./operator/timestamp');
+exports.Timestamp = timestamp_1.Timestamp;
+var TestScheduler_1 = require('./testing/TestScheduler');
+exports.TestScheduler = TestScheduler_1.TestScheduler;
+var VirtualTimeScheduler_1 = require('./scheduler/VirtualTimeScheduler');
+exports.VirtualTimeScheduler = VirtualTimeScheduler_1.VirtualTimeScheduler;
+var AjaxObservable_1 = require('./observable/dom/AjaxObservable');
+exports.AjaxResponse = AjaxObservable_1.AjaxResponse;
+exports.AjaxError = AjaxObservable_1.AjaxError;
+exports.AjaxTimeoutError = AjaxObservable_1.AjaxTimeoutError;
+var asap_1 = require('./scheduler/asap');
+var async_1 = require('./scheduler/async');
+var queue_1 = require('./scheduler/queue');
+var animationFrame_1 = require('./scheduler/animationFrame');
+var rxSubscriber_1 = require('./symbol/rxSubscriber');
+var iterator_1 = require('./symbol/iterator');
+var observable_1 = require('./symbol/observable');
+/* tslint:enable:no-unused-variable */
+/**
+ * @typedef {Object} Rx.Scheduler
+ * @property {Scheduler} queue Schedules on a queue in the current event frame
+ * (trampoline scheduler). Use this for iteration operations.
+ * @property {Scheduler} asap Schedules on the micro task queue, which uses the
+ * fastest transport mechanism available, either Node.js' `process.nextTick()`
+ * or Web Worker MessageChannel or setTimeout or others. Use this for
+ * asynchronous conversions.
+ * @property {Scheduler} async Schedules work with `setInterval`. Use this for
+ * time-based operations.
+ * @property {Scheduler} animationFrame Schedules work with `requestAnimationFrame`.
+ * Use this for synchronizing with the platform's painting
+ */
+var Scheduler = {
+    asap: asap_1.asap,
+    queue: queue_1.queue,
+    animationFrame: animationFrame_1.animationFrame,
+    async: async_1.async
+};
+exports.Scheduler = Scheduler;
+/**
+ * @typedef {Object} Rx.Symbol
+ * @property {Symbol|string} rxSubscriber A symbol to use as a property name to
+ * retrieve an "Rx safe" Observer from an object. "Rx safety" can be defined as
+ * an object that has all of the traits of an Rx Subscriber, including the
+ * ability to add and remove subscriptions to the subscription chain and
+ * guarantees involving event triggering (can't "next" after unsubscription,
+ * etc).
+ * @property {Symbol|string} observable A symbol to use as a property name to
+ * retrieve an Observable as defined by the [ECMAScript "Observable" spec](https://github.com/zenparsing/es-observable).
+ * @property {Symbol|string} iterator The ES6 symbol to use as a property name
+ * to retrieve an iterator from an object.
+ */
+var Symbol = {
+    rxSubscriber: rxSubscriber_1.rxSubscriber,
+    observable: observable_1.observable,
+    iterator: iterator_1.iterator
+};
+exports.Symbol = Symbol;
+//# sourceMappingURL=Rx.js.map
+});
+;define('rxjs', ['rxjs/Rx'], function (main) { return main; });
+
+define('aurelia-binding-functions/index',["require", "exports", './module-analyzer', './view-resources', './lexer', './access-expression', './parser-implementation', './binding-function-resource', './binding-function-scope'], function (require, exports, module_analyzer_1, view_resources_1, lexer_1, access_expression_1, parser_implementation_1, binding_function_resource_1, binding_function_scope_1) {
+    "use strict";
+    exports.bindingFunction = binding_function_resource_1.bindingFunction;
+    exports.BindingFunctionResource = binding_function_resource_1.BindingFunctionResource;
+    exports.BindingFunctionScope = binding_function_scope_1.BindingFunctionScope;
+    function configure(frameworkConfig) {
+        var viewResources = frameworkConfig.aurelia.resources;
+        view_resources_1.patchViewResources(viewResources);
+        module_analyzer_1.patchModuleAnalyzer();
+        access_expression_1.patchAccessExpressions();
+        parser_implementation_1.patchParserImplementation();
+        lexer_1.patchLexer();
+    }
+    exports.configure = configure;
+});
+//# sourceMappingURL=index.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzIjpbImluZGV4LnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0lBU1Esc0VBQWU7SUFBRSxzRkFBMkQ7SUFDNUUsNkVBQXFEO0lBRTdELG1CQUEwQixlQUF1QztRQUMvRCxJQUFNLGFBQWEsR0FBRyxlQUFlLENBQUMsT0FBTyxDQUFDLFNBQVMsQ0FBQTtRQUd2RCxtQ0FBa0IsQ0FBQyxhQUFhLENBQUMsQ0FBQTtRQUdqQyxxQ0FBbUIsRUFBRSxDQUFBO1FBR3JCLDBDQUFzQixFQUFFLENBQUE7UUFHeEIsaURBQXlCLEVBQUUsQ0FBQTtRQU0zQixrQkFBVSxFQUFFLENBQUE7SUFDZCxDQUFDO0lBcEJlLGlCQUFTLFlBb0J4QixDQUFBIiwic291cmNlc0NvbnRlbnQiOltdfQ==
+;define('aurelia-binding-functions', ['aurelia-binding-functions/index'], function (main) { return main; });
+
+define('aurelia-binding-functions/module-analyzer',["require", "exports", 'aurelia-templating', 'aurelia-metadata', 'aurelia-loader', 'aurelia-binding', 'aurelia-binding', './binding-function-resource'], function (require, exports, aurelia_templating_1, aurelia_metadata_1, aurelia_loader_1, aurelia_binding_1, aurelia_binding_2, binding_function_resource_1) {
+    "use strict";
+    function patchModuleAnalyzer() {
+        aurelia_templating_1.ModuleAnalyzer.prototype.analyze = function analyze(moduleId, moduleInstance, mainResourceKey) {
+            var mainResource;
+            var fallbackValue;
+            var fallbackKey;
+            var resourceTypeMeta;
+            var key;
+            var exportedValue;
+            var resources = [];
+            var conventional;
+            var vs;
+            var resourceModule;
+            resourceModule = this.cache[moduleId];
+            if (resourceModule) {
+                return resourceModule;
+            }
+            resourceModule = new aurelia_templating_1.ResourceModule(moduleId);
+            this.cache[moduleId] = resourceModule;
+            if (typeof moduleInstance === 'function') {
+                moduleInstance = { 'default': moduleInstance };
+            }
+            if (mainResourceKey) {
+                mainResource = new aurelia_templating_1.ResourceDescription(mainResourceKey, moduleInstance[mainResourceKey]);
+            }
+            for (key in moduleInstance) {
+                exportedValue = moduleInstance[key];
+                if (key === mainResourceKey || typeof exportedValue !== 'function') {
+                    continue;
+                }
+                resourceTypeMeta = aurelia_metadata_1.metadata.get(aurelia_metadata_1.metadata.resource, exportedValue);
+                if (resourceTypeMeta) {
+                    if (resourceTypeMeta.attributeName === null && resourceTypeMeta.elementName === null) {
+                        aurelia_templating_1.HtmlBehaviorResource.convention(key, resourceTypeMeta);
+                    }
+                    if (resourceTypeMeta.attributeName === null && resourceTypeMeta.elementName === null) {
+                        resourceTypeMeta.elementName = aurelia_templating_1._hyphenate(key);
+                    }
+                    if (!mainResource && resourceTypeMeta instanceof aurelia_templating_1.HtmlBehaviorResource && resourceTypeMeta.elementName !== null) {
+                        mainResource = new aurelia_templating_1.ResourceDescription(key, exportedValue, resourceTypeMeta);
+                    }
+                    else {
+                        resources.push(new aurelia_templating_1.ResourceDescription(key, exportedValue, resourceTypeMeta));
+                    }
+                }
+                else if (aurelia_templating_1.viewStrategy.decorates(exportedValue)) {
+                    vs = exportedValue;
+                }
+                else if (exportedValue instanceof aurelia_loader_1.TemplateRegistryEntry) {
+                    vs = new aurelia_templating_1.TemplateRegistryViewStrategy(moduleId, exportedValue);
+                }
+                else {
+                    if (conventional = aurelia_templating_1.HtmlBehaviorResource.convention(key)) {
+                        if (conventional.elementName !== null && !mainResource) {
+                            mainResource = new aurelia_templating_1.ResourceDescription(key, exportedValue, conventional);
+                        }
+                        else {
+                            resources.push(new aurelia_templating_1.ResourceDescription(key, exportedValue, conventional));
+                        }
+                        aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, conventional, exportedValue);
+                    }
+                    else if (conventional = aurelia_binding_1.ValueConverterResource.convention(key)) {
+                        resources.push(new aurelia_templating_1.ResourceDescription(key, exportedValue, conventional));
+                        aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, conventional, exportedValue);
+                    }
+                    else if (conventional = aurelia_binding_2.BindingBehaviorResource.convention(key)) {
+                        resources.push(new aurelia_templating_1.ResourceDescription(key, exportedValue, conventional));
+                        aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, conventional, exportedValue);
+                    }
+                    else if (conventional = binding_function_resource_1.BindingFunctionResource.convention(key)) {
+                        resources.push(new aurelia_templating_1.ResourceDescription(key, exportedValue, conventional));
+                        aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, conventional, exportedValue);
+                    }
+                    else if (!fallbackValue) {
+                        fallbackValue = exportedValue;
+                        fallbackKey = key;
+                    }
+                }
+            }
+            if (!mainResource && fallbackValue) {
+                mainResource = new aurelia_templating_1.ResourceDescription(fallbackKey, fallbackValue);
+            }
+            resourceModule.moduleInstance = moduleInstance;
+            resourceModule.mainResource = mainResource;
+            resourceModule.resources = resources;
+            resourceModule.viewStrategy = vs;
+            return resourceModule;
+        };
+    }
+    exports.patchModuleAnalyzer = patchModuleAnalyzer;
+});
+//# sourceMappingURL=module-analyzer.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibW9kdWxlLWFuYWx5emVyLmpzIiwic291cmNlUm9vdCI6Ii9zb3VyY2UvIiwic291cmNlcyI6WyJtb2R1bGUtYW5hbHl6ZXIudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7SUFXQTtRQVFFLG1DQUFjLENBQUMsU0FBUyxDQUFDLE9BQU8sR0FBRyxpQkFBaUIsUUFBZ0IsRUFBRSxjQUFtQixFQUFFLGVBQXdCO1lBQ2pILElBQUksWUFBWSxDQUFDO1lBQ2pCLElBQUksYUFBYSxDQUFDO1lBQ2xCLElBQUksV0FBVyxDQUFDO1lBQ2hCLElBQUksZ0JBQWdCLENBQUM7WUFDckIsSUFBSSxHQUFHLENBQUM7WUFDUixJQUFJLGFBQWEsQ0FBQztZQUNsQixJQUFJLFNBQVMsR0FBRyxFQUFFLENBQUM7WUFDbkIsSUFBSSxZQUFZLENBQUM7WUFDakIsSUFBSSxFQUFFLENBQUM7WUFDUCxJQUFJLGNBQWMsQ0FBQztZQUVuQixjQUFjLEdBQUcsSUFBSSxDQUFDLEtBQUssQ0FBQyxRQUFRLENBQUMsQ0FBQztZQUN0QyxFQUFFLENBQUMsQ0FBQyxjQUFjLENBQUMsQ0FBQyxDQUFDO2dCQUNuQixNQUFNLENBQUMsY0FBYyxDQUFDO1lBQ3hCLENBQUM7WUFFRCxjQUFjLEdBQUcsSUFBSSxtQ0FBYyxDQUFDLFFBQVEsQ0FBQyxDQUFDO1lBQzlDLElBQUksQ0FBQyxLQUFLLENBQUMsUUFBUSxDQUFDLEdBQUcsY0FBYyxDQUFDO1lBRXRDLEVBQUUsQ0FBQyxDQUFDLE9BQU8sY0FBYyxLQUFLLFVBQVUsQ0FBQyxDQUFDLENBQUM7Z0JBQ3pDLGNBQWMsR0FBRyxFQUFDLFNBQVMsRUFBRSxjQUFjLEVBQUMsQ0FBQztZQUMvQyxDQUFDO1lBRUQsRUFBRSxDQUFDLENBQUMsZUFBZSxDQUFDLENBQUMsQ0FBQztnQkFDcEIsWUFBWSxHQUFHLElBQUksd0NBQW1CLENBQUMsZUFBZSxFQUFFLGNBQWMsQ0FBQyxlQUFlLENBQUMsQ0FBQyxDQUFDO1lBQzNGLENBQUM7WUFFRCxHQUFHLENBQUMs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LFlBQVksQ0FBQyxDQUFDLENBQUM7d0JBQzFFLDJCQUFRLENBQUMsTUFBTSxDQUFDLDJCQUFRLENBQUMsUUFBUSxFQUFFLFlBQVksRUFBRSxhQUFhLENBQUMsQ0FBQztvQkFDbEUsQ0FBQztvQkFBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsWUFBWSxHQUFHLHlDQUF1QixDQUFDLFVBQVUsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUM7d0JBQ2xFLFNBQVMsQ0FBQyxJQUFJLENBQUMsSUFBSSx3Q0FBbUIsQ0FBQyxHQUFHLEVBQUUsYUFBYSxFQUFFLFlBQVksQ0FBQyxDQUFDLENBQUM7d0JBQzFFLDJCQUFRLENBQUMsTUFBTSxDQUFDLDJCQUFRLENBQUMsUUFBUSxFQUFFLFlBQVksRUFBRSxhQUFhLENBQUMsQ0FBQztvQkFDbEUsQ0FBQztvQkFBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsWUFBWSxHQUFHLG1EQUF1QixDQUFDLFVBQVUsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUM7d0JBQ2xFLFNBQVMsQ0FBQyxJQUFJLENBQUMsSUFBSSx3Q0FBbUIsQ0FBQyxHQUFHLEVBQUUsYUFBYSxFQUFFLFlBQVksQ0FBQyxDQUFDLENBQUM7d0JBQzFFLDJCQUFRLENBQUMsTUFBTSxDQUFDLDJCQUFRLENBQUMsUUFBUSxFQUFFLFlBQVksRUFBRSxhQUFhLENBQUMsQ0FBQztvQkFDbEUsQ0FBQztvQkFBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQyxhQUFhLENBQUMsQ0FBQyxDQUFDO3dCQUMxQixhQUFhLEdBQUcsYUFBYSxDQUFDO3dCQUM5QixXQUFXLEdBQUcsR0FBRyxDQUFDO29CQUNwQixDQUFDO2dCQUNILENBQUM7WUFDSCxDQUFDO1lBRUQsRUFBRSxDQUFDLENBQUMsQ0FBQyxZQUFZLElBQUksYUFBYSxDQUFDLENBQUMsQ0FBQztnQkFDbkMsWUFBWSxHQUFHLElBQUksd0NBQW1CLENBQUMsV0FBVyxFQUFFLGFBQWEsQ0FBQyxDQUFDO1lBQ3JFLENBQUM7WUFFRCxjQUFjLENBQUMsY0FBYyxHQUFHLGNBQWMsQ0FBQztZQUMvQyxjQUFjLENBQUMsWUFBWSxHQUFHLFlBQVksQ0FBQztZQUMzQyxjQUFjLENBQUMsU0FBUyxHQUFHLFNBQVMsQ0FBQztZQUNyQyxjQUFjLENBQUMsWUFBWSxHQUFHLEVBQUUsQ0FBQztZQUVqQyxNQUFNLENBQUMsY0FBYyxDQUFDO1FBQ3hCLENBQUMsQ0FBQTtJQUNILENBQUM7SUFyR2UsMkJBQW1CLHNCQXFHbEMsQ0FBQSIsInNvdXJjZXNDb250ZW50IjpbXX0=
+
+define('aurelia-binding-functions/binding-function-resource',["require", "exports", 'aurelia-binding', 'aurelia-metadata'], function (require, exports, aurelia_binding_1, aurelia_metadata_1) {
+    "use strict";
+    var BindingFunctionResource = (function () {
+        function BindingFunctionResource(name) {
+            this.name = name;
+        }
+        BindingFunctionResource.convention = function (name) {
+            if (name.endsWith('BindingFunction')) {
+                return new BindingFunctionResource('@' + aurelia_binding_1.camelCase(name.substring(0, name.length - 15)));
+            }
+        };
+        BindingFunctionResource.prototype.initialize = function (container, target) {
+            this.instance = container.get(target);
+        };
+        BindingFunctionResource.prototype.register = function (registry, name) {
+            registry.registerBindingFunction(name || this.name, this.instance);
+        };
+        BindingFunctionResource.prototype.load = function (container, target) { };
+        return BindingFunctionResource;
+    }());
+    exports.BindingFunctionResource = BindingFunctionResource;
+    function bindingFunction(nameOrTarget) {
+        if (nameOrTarget === undefined || typeof nameOrTarget === 'string') {
+            return function (target) {
+                aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, new BindingFunctionResource(nameOrTarget), target);
+            };
+        }
+        aurelia_metadata_1.metadata.define(aurelia_metadata_1.metadata.resource, new BindingFunctionResource(), nameOrTarget);
+    }
+    exports.bindingFunction = bindingFunction;
+});
+//# sourceMappingURL=binding-function-resource.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYmluZGluZy1mdW5jdGlvbi1yZXNvdXJjZS5qcyIsInNvdXJjZVJvb3QiOiIvc291cmNlLyIsInNvdXJjZXMiOlsiYmluZGluZy1mdW5jdGlvbi1yZXNvdXJjZS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztJQUlBO1FBRUUsaUNBQW1CLElBQVk7WUFBWixTQUFJLEdBQUosSUFBSSxDQUFRO1FBQUcsQ0FBQztRQUU1QixrQ0FBVSxHQUFqQixVQUFrQixJQUFJO1lBQ3BCLEVBQUUsQ0FBQyxDQUFDLElBQUksQ0FBQyxRQUFRLENBQUMsaUJBQWlCLENBQUMsQ0FBQyxDQUFDLENBQUM7Z0JBQ3JDLE1BQU0sQ0FBQyxJQUFJLHVCQUF1QixDQUFDLEdBQUcsR0FBRywyQkFBUyxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxFQUFFLElBQUksQ0FBQyxNQUFNLEdBQUcsRUFBRSxDQUFDLENBQUMsQ0FBQyxDQUFDO1lBQzNGLENBQUM7UUFDSCxDQUFDO1FBRUQsNENBQVUsR0FBVixVQUFXLFNBQVMsRUFBRSxNQUFNO1lBQzFCLElBQUksQ0FBQyxRQUFRLEdBQUcsU0FBUyxDQUFDLEdBQUcsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUN4QyxDQUFDO1FBRUQsMENBQVEsR0FBUixVQUFTLFFBQVEsRUFBRSxJQUFJO1lBQ3JCLFFBQVEsQ0FBQyx1QkFBdUIsQ0FBQyxJQUFJLElBQUksSUFBSSxDQUFDLElBQUksRUFBRSxJQUFJLENBQUMsUUFBUSxDQUFDLENBQUM7UUFDckUsQ0FBQztRQUVELHNDQUFJLEdBQUosVUFBSyxTQUFTLEVBQUUsTUFBTSxJQUFHLENBQUM7UUFDNUIsOEJBQUM7SUFBRCxDQUFDLEFBbkJELElBbUJDO0lBbkJZLCtCQUF1QiwwQkFtQm5DLENBQUE7SUFFRCx5QkFBZ0MsWUFBWTtRQUMxQyxFQUFFLENBQUEsQ0FBQyxZQUFZLEtBQUssU0FBUyxJQUFJLE9BQU8sWUFBWSxLQUFLLFFBQVEsQ0FBQyxDQUFBLENBQUM7WUFDakUsTUFBTSxDQUFDLFVBQVMsTUFBTTtnQkFDcEIsMkJBQVEsQ0FBQyxNQUFNLENBQUMsMkJBQVEsQ0FBQyxRQUFRLEVBQUUsSUFBSSx1QkFBdUIsQ0FBQyxZQUFZLENBQUMsRUFBRSxNQUFNLENBQUMsQ0FBQztZQUN4RixDQUFDLENBQUE7UUFDSCxDQUFDO1FBRUQsMkJBQVEsQ0FBQyxNQUFNLENBQUMsMkJBQVEsQ0FBQyxRQUFRLEVBQUUsSUFBSSx1QkFBdUIsRUFBRSxFQUFFLFlBQVksQ0FBQyxDQUFDO0lBQ2xGLENBQUM7SUFSZSx1QkFBZSxrQkFROUIsQ0FBQSIsInNvdXJjZXNDb250ZW50IjpbXX0=
+
+define('aurelia-binding-functions/view-resources',["require", "exports", 'aurelia-templating', 'aurelia-logging'], function (require, exports, aurelia_templating_1, LogManager) {
+    "use strict";
+    function patchViewResources(viewResources) {
+        var logger = LogManager.getLogger('templating');
+        aurelia_templating_1.ViewEngine.prototype.loadTemplateResources = function loadTemplateResources(registryEntry, compileInstruction, loadContext) {
+            var resources = new aurelia_templating_1.ViewResources(this.appResources, registryEntry.address);
+            if (!resources.lookupFunctions.bindingFunctions)
+                Object.assign(resources.lookupFunctions, { bindingFunctions: resources.getBindingFunction.bind(resources) });
+            if (!resources.bindingFunctions)
+                resources.bindingFunctions = {};
+            var dependencies = registryEntry.dependencies;
+            var importIds = void 0;
+            var names = void 0;
+            compileInstruction = compileInstruction || aurelia_templating_1.ViewCompileInstruction.normal;
+            if (dependencies.length === 0 && !compileInstruction.associatedModuleId) {
+                return Promise.resolve(resources);
+            }
+            importIds = dependencies.map(function (x) {
+                return x.src;
+            });
+            names = dependencies.map(function (x) {
+                return x.name;
+            });
+            logger.debug('importing resources for ' + registryEntry.address, importIds);
+            return this.importViewResources(importIds, names, resources, compileInstruction, loadContext);
+        };
+        aurelia_templating_1.ViewResources.prototype.registerBindingFunction = function (name, bindingFunction) {
+            register(this.bindingFunctions, name, bindingFunction, 'a BindingFunction');
+        };
+        aurelia_templating_1.ViewResources.prototype.getBindingFunction = function (name) {
+            return this.bindingFunctions[name] || (this.hasParent ? this.parent.getBindingFunction(name) : null);
+        };
+        viewResources.bindingFunctions = {};
+        Object.assign(viewResources.lookupFunctions, { bindingFunctions: viewResources.getBindingFunction.bind(viewResources) });
+    }
+    exports.patchViewResources = patchViewResources;
+    function register(lookup, name, resource, type) {
+        if (!name) {
+            return;
+        }
+        var existing = lookup[name];
+        if (existing) {
+            if (existing !== resource) {
+                throw new Error("Attempted to register " + type + " when one with the same name already exists. Name: " + name + ".");
+            }
+            return;
+        }
+        lookup[name] = resource;
+    }
+});
+//# sourceMappingURL=view-resources.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidmlldy1yZXNvdXJjZXMuanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzIjpbInZpZXctcmVzb3VyY2VzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0lBR0EsNEJBQW1DLGFBQTRCO1FBQzdELElBQU0sTUFBTSxHQUFHLFVBQVUsQ0FBQyxTQUFTLENBQUMsWUFBWSxDQUFDLENBQUM7UUFJbEQsK0JBQVUsQ0FBQyxTQUFTLENBQUMscUJBQXFCLEdBQUcsK0JBQStCLGFBQWEsRUFBRSxrQkFBa0IsRUFBRSxXQUFXO1lBQ3hILElBQUksU0FBUyxHQUFHLElBQUksa0NBQWEsQ0FBQyxJQUFJLENBQUMsWUFBWSxFQUFFLGFBQWEsQ0FBQyxPQUFPLENBQUMsQ0FBQztZQUk1RSxFQUFFLENBQUMsQ0FBQyxDQUFDLFNBQVMsQ0FBQyxlQUFlLENBQUMsZ0JBQWdCLENBQUM7Z0JBQUMsTUFBTSxDQUFDLE1BQU0sQ0FBQyxTQUFTLENBQUMsZUFBZSxFQUFFLEVBQUUsZ0JBQWdCLEVBQUUsU0FBUyxDQUFDLGtCQUFrQixDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsRUFBRSxDQUFDLENBQUE7WUFDN0osRUFBRSxDQUFDLENBQUMsQ0FBQyxTQUFTLENBQUMsZ0JBQWdCLENBQUM7Z0JBQUMsU0FBUyxDQUFDLGdCQUFnQixHQUFHLEVBQUUsQ0FBQTtZQUdoRSxJQUFJLFlBQVksR0FBRyxhQUFhLENBQUMsWUFBWSxDQUFDO1lBQzlDLElBQUksU0FBUyxHQUFHLEtBQUssQ0FBQyxDQUFDO1lBQ3ZCLElBQUksS0FBSyxHQUFHLEtBQUssQ0FBQyxDQUFDO1lBRW5CLGtCQUFrQixHQUFHLGtCQUFrQixJQUFJLDJDQUFzQixDQUFDLE1BQU0sQ0FBQztZQUV6RSxFQUFFLENBQUMsQ0FBQyxZQUFZLENBQUMsTUFBTSxLQUFLLENBQUMsSUFBSSxDQUFDLGtCQUFrQixDQUFDLGtCQUFrQixDQUFDLENBQUMsQ0FBQztnQkFDeEUsTUFBTSxDQUFDLE9BQU8sQ0FBQyxPQUFPLENBQUMsU0FBUyxDQUFDLENBQUM7WUFDcEMsQ0FBQztZQUVELFNBQVMsR0FBRyxZQUFZLENBQUMsR0FBRyxDQUFDLFVBQVUsQ0FBQztnQkFDdEMsTUFBTSxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUM7WUFDZixDQUFDLENBQUMsQ0FBQztZQUNILEtBQUssR0FBRyxZQUFZLENBQUMsR0FBRyxDQUFDLFVBQVUsQ0FBQztnQkFDbEMsTUFBTSxDQUFDLENBQUMsQ0FBQyxJQUFJLENBQUM7WUFDaEIsQ0FBQyxDQUFDLENBQUM7WUFDSCxNQUFNLENBQUMsS0FBSyxDQUFDLDBCQUEwQixHQUFHLGFBQWEsQ0FBQyxPQUFPLEVBQUUsU0FBUyxDQUFDLENBQUM7WUFFNUUsTUFBTSxDQUFDLElBQUksQ0FBQyxtQkFBbUIsQ0FBQyxTQUFTLEVBQUUsS0FBSyxFQUFFLFNBQVMsRUFBRSxrQkFBa0IsRUFBRSxXQUFXLENBQUMsQ0FBQztRQUNoRyxDQUFDLENBQUM7UUFPRixrQ0FBYSxDQUFDLFNBQVMsQ0FBQyx1QkFBdUIsR0FBRyxVQUFTLElBQVksRUFBRSxlQUF1QjtZQUM5RixRQUFRLENBQUMsSUFBSSxDQUFDLGdCQUFnQixFQUFFLElBQUksRUFBRSxlQUFlLEVBQUUsbUJBQW1CLENBQUMsQ0FBQTtRQUM3RSxDQUFDLENBQUE7UUFPRCxrQ0FBYSxDQUFDLFNBQVMsQ0FBQyxrQkFBa0IsR0FBRyxVQUFTLElBQVk7WUFDaEUsTUFBTSxDQUFDLElBQUksQ0FBQyxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxTQUFTLEdBQUcsSUFBSSxDQUFDLE1BQU0sQ0FBQyxrQkFBa0IsQ0FBQyxJQUFJLENBQUMsR0FBRyxJQUFJLENBQUMsQ0FBQTtRQUN0RyxDQUFDLENBQUE7UUFHRCxhQUFhLENBQUMsZ0JBQWdCLEdBQUcsRUFBRSxDQUFBO1FBQ25DLE1BQU0sQ0FBQyxNQUFNLENBQUMsYUFBYSxDQUFDLGVBQWUsRUFBRSxFQUFFLGdCQUFnQixFQUFFLGFBQWEsQ0FBQyxrQkFBa0IsQ0FBQyxJQUFJLENBQUMsYUFBYSxDQUFDLEVBQUUsQ0FBQyxDQUFBO0lBQzFILENBQUM7SUF4RGUsMEJBQWtCLHFCQXdEakMsQ0FBQTtJQUtELGtCQUFrQixNQUFNLEVBQUUsSUFBSSxFQUFFLFFBQVEsRUFBRSxJQUFJO1FBQzVDLEVBQUUsQ0FBQyxDQUFDLENBQUMsSUFBSSxDQUFDLENBQUMsQ0FBQztZQUNWLE1BQU0sQ0FBQztRQUNULENBQUM7UUFFRCxJQUFJLFFBQVEsR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLENBQUM7UUFDNUIsRUFBRSxDQUFDLENBQUMsUUFBUSxDQUFDLENBQUMsQ0FBQztZQUNiLEVBQUUsQ0FBQyxDQUFDLFFBQVEsS0FBSyxRQUFRLENBQUMsQ0FBQyxDQUFDO2dCQUMxQixNQUFNLElBQUksS0FBSyxDQUFDLDJCQUF5QixJQUFJLDJEQUFzRCxJQUFJLE1BQUcsQ0FBQyxDQUFDO1lBQzlHLENBQUM7WUFFRCxNQUFNLENBQUM7UUFDVCxDQUFDO1FBRUQsTUFBTSxDQUFDLElBQUksQ0FBQyxHQUFHLFFBQVEsQ0FBQztJQUMxQixDQUFDIiwic291cmNlc0NvbnRlbnQiOltdfQ==
+
+define('aurelia-binding-functions/lexer',["require", "exports", 'aurelia-binding'], function (require, exports, aurelia_binding_1) {
+    "use strict";
+    function patchLexer() {
+        var scanToken = aurelia_binding_1.Scanner.prototype.scanToken;
+        aurelia_binding_1.Scanner.prototype.scanToken = function () {
+            if (isIdentifierStart(this.peek)) {
+                return this.scanIdentifier();
+            }
+            return scanToken.apply(this, arguments);
+        };
+        aurelia_binding_1.Scanner.prototype.scanIdentifier = function () {
+            assert(isIdentifierStart(this.peek));
+            var start = this.index;
+            this.advance();
+            while (isIdentifierPart(this.peek)) {
+                this.advance();
+            }
+            var text = this.input.substring(start, this.index);
+            var result = new aurelia_binding_1.Token(start, text);
+            if (OPERATORS.indexOf(text) !== -1) {
+                result.withOp(text);
+            }
+            else {
+                result.withGetterSetter(text);
+            }
+            return result;
+        };
+        var $$ = 36;
+        var $a = 97;
+        var $z = 122;
+        var $_ = 95;
+        var $0 = 48;
+        var $9 = 57;
+        var $A = 65;
+        var $Z = 90;
+        var $AT = 64;
+        var OPERATORS = [
+            'undefined',
+            'null',
+            'true',
+            'false',
+            '+',
+            '-',
+            '*',
+            '/',
+            '%',
+            '^',
+            '=',
+            '==',
+            '===',
+            '!=',
+            '!==',
+            '<',
+            '>',
+            '<=',
+            '>=',
+            '&&',
+            '||',
+            '&',
+            '|',
+            '!',
+            '?',
+        ];
+        function isIdentifierStart(code) {
+            return ($a <= code && code <= $z)
+                || ($A <= code && code <= $Z)
+                || (code === $_)
+                || (code === $$)
+                || (code === $AT);
+        }
+        function isIdentifierPart(code) {
+            return ($a <= code && code <= $z)
+                || ($A <= code && code <= $Z)
+                || ($0 <= code && code <= $9)
+                || (code === $_)
+                || (code === $$);
+        }
+        function assert(condition, message) {
+            if (!condition) {
+                throw message || "Assertion failed";
+            }
+        }
+    }
+    exports.patchLexer = patchLexer;
+});
+//# sourceMappingURL=lexer.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibGV4ZXIuanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzIjpbImxleGVyLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0lBRUE7UUFDRSxJQUFNLFNBQVMsR0FBRyx5QkFBTyxDQUFDLFNBQVMsQ0FBQyxTQUFTLENBQUE7UUFFN0MseUJBQU8sQ0FBQyxTQUFTLENBQUMsU0FBUyxHQUFHO1lBQzVCLEVBQUUsQ0FBQyxDQUFDLGlCQUFpQixDQUFDLElBQUksQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUM7Z0JBQ2pDLE1BQU0sQ0FBQyxJQUFJLENBQUMsY0FBYyxFQUFFLENBQUM7WUFDL0IsQ0FBQztZQUNELE1BQU0sQ0FBQyxTQUFTLENBQUMsS0FBSyxDQUFDLElBQUksRUFBRSxTQUFTLENBQUMsQ0FBQTtRQUN6QyxDQUFDLENBQUE7UUFLRCx5QkFBTyxDQUFDLFNBQVMsQ0FBQyxjQUFjLEdBQUc7WUFDakMsTUFBTSxDQUFDLGlCQUFpQixDQUFDLElBQUksQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDO1lBQ3JDLElBQUksS0FBSyxHQUFHLElBQUksQ0FBQyxLQUFLLENBQUM7WUFFdkIsSUFBSSxDQUFDLE9BQU8sRUFBRSxDQUFDO1lBRWYsT0FBTyxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FBQztnQkFDbkMsSUFBSSxDQUFDLE9BQU8sRUFBRSxDQUFDO1lBQ2pCLENBQUM7WUFFRCxJQUFJLElBQUksR0FBRyxJQUFJLENBQUMsS0FBSyxDQUFDLFNBQVMsQ0FBQyxLQUFLLEVBQUUsSUFBSSxDQUFDLEtBQUssQ0FBQyxDQUFDO1lBQ25ELElBQUksTUFBTSxHQUFHLElBQUksdUJBQUssQ0FBQyxLQUFLLEVBQUUsSUFBSSxDQUFDLENBQUM7WUFJcEMsRUFBRSxDQUFDLENBQUMsU0FBUyxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsS0FBSyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7Z0JBQ25DLE1BQU0sQ0FBQyxNQUFNLENBQUMsSUFBSSxDQUFDLENBQUM7WUFDdEIsQ0FBQztZQUFDLElBQUksQ0FBQyxDQUFDO2dCQUNOLE1BQU0sQ0FBQyxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsQ0FBQztZQUNoQyxDQUFDO1lBRUQsTUFBTSxDQUFDLE1BQU0sQ0FBQztRQUNoQixDQUFDLENBQUE7UUFFRCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFDZCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFDZCxJQUFNLEVBQUUsR0FBRyxHQUFHLENBQUM7UUFDZixJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFFZCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFDZCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFFZCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFDZCxJQUFNLEVBQUUsR0FBRyxFQUFFLENBQUM7UUFFZCxJQUFNLEdBQUcsR0FBRyxFQUFFLENBQUM7UUFFZixJQUFNLFNBQVMsR0FBRztZQUNoQixXQUFXO1lBQ1gsTUFBTTtZQUNOLE1BQU07WUFDTixPQUFPO1lBQ1AsR0FBRztZQUNILEdBQUc7WUFDSCxHQUFHO1lBQ0gsR0FBRztZQUNILEdBQUc7WUFDSCxHQUFHO1lBQ0gsR0FBRztZQUNILElBQUk7WUFDSixLQUFLO1lBQ0wsSUFBSTtZQUNKLEtBQUs7WUFDTCxHQUFHO1lBQ0gsR0FBRztZQUNILElBQUk7WUFDSixJQUFJO1lBQ0osSUFBSTtZQUNKLElBQUk7WUFDSixHQUFHO1lBQ0gsR0FBRztZQUNILEdBQUc7WUFDSCxHQUFHO1NBQ0osQ0FBQztRQUVGLDJCQUEyQixJQUFJO1lBQzdCLE1BQU0sQ0FBQyxDQUFDLEVBQUUsSUFBSSxJQUFJLElBQUksSUFBSSxJQUFJLEVBQUUsQ0FBQzttQkFDMUIsQ0FBQyxFQUFFLElBQUksSUFBSSxJQUFJLElBQUksSUFBSSxFQUFFLENBQUM7bUJBQzFCLENBQUMsSUFBSSxLQUFLLEVBQUUsQ0FBQzttQkFDYixDQUFDLElBQUksS0FBSyxFQUFFLENBQUM7bUJBQ2IsQ0FBQyxJQUFJLEtBQUssR0FBRyxDQUFDLENBQUM7UUFDeEIsQ0FBQztRQUVELDBCQUEwQixJQUFJO1lBQzVCLE1BQU0sQ0FBQyxDQUFDLEVBQUUsSUFBSSxJQUFJLElBQUksSUFBSSxJQUFJLEVBQUUsQ0FBQzttQkFDMUIsQ0FBQyxFQUFFLElBQUksSUFBSSxJQUFJLElBQUksSUFBSSxFQUFFLENBQUM7bUJBQzFCLENBQUMsRUFBRSxJQUFJLElBQUksSUFBSSxJQUFJLElBQUksRUFBRSxDQUFDO21CQUMxQixDQUFDLElBQUksS0FBSyxFQUFFLENBQUM7bUJBQ2IsQ0FBQyxJQUFJLEtBQUssRUFBRSxDQUFDLENBQUM7UUFDdkIsQ0FBQztRQUVELGdCQUFnQixTQUFTLEVBQUUsT0FBUTtZQUNqQyxFQUFFLENBQUMsQ0FBQyxDQUFDLFNBQVMsQ0FBQyxDQUFDLENBQUM7Z0JBQ2YsTUFBTSxPQUFPLElBQUksa0JBQWtCLENBQUM7WUFDdEMsQ0FBQztRQUNILENBQUM7SUFDSCxDQUFDO0lBbkdlLGtCQUFVLGFBbUd6QixDQUFBIiwic291cmNlc0NvbnRlbnQiOltdfQ==
+
+define('aurelia-binding-functions/access-expression',["require", "exports", 'aurelia-binding'], function (require, exports, aurelia_binding_1) {
+    "use strict";
+    function patchAccessExpressions() {
+        aurelia_binding_1.AccessMember.prototype.bind = function bind(binding, scope, lookupFunctions) {
+            if (this.object && typeof this.object.bind === 'function') {
+                this.object.bind(binding, scope, lookupFunctions);
+            }
+        };
+        aurelia_binding_1.AccessMember.prototype.unbind = function unbind(binding, scope) {
+            if (this.object && typeof this.object.unbind === 'function') {
+                this.object.unbind(binding, scope);
+            }
+        };
+        aurelia_binding_1.AccessKeyed.prototype.bind = function bind(binding, scope, lookupFunctions) {
+            if (this.object && typeof this.object.bind === 'function') {
+                this.object.bind(binding, scope, lookupFunctions);
+            }
+        };
+        aurelia_binding_1.AccessKeyed.prototype.unbind = function unbind(binding, scope) {
+            if (this.object && typeof this.object.unbind === 'function') {
+                this.object.unbind(binding, scope);
+            }
+        };
+    }
+    exports.patchAccessExpressions = patchAccessExpressions;
+});
+//# sourceMappingURL=access-expression.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYWNjZXNzLWV4cHJlc3Npb24uanMiLCJzb3VyY2VSb290IjoiL3NvdXJjZS8iLCJzb3VyY2VzIjpbImFjY2Vzcy1leHByZXNzaW9uLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0lBR0E7UUFDRSw4QkFBWSxDQUFDLFNBQVMsQ0FBQyxJQUFJLEdBQUcsY0FBYyxPQUFnQixFQUFFLEtBQVksRUFBRSxlQUFlO1lBRXpGLEVBQUUsQ0FBQyxDQUFDLElBQUksQ0FBQyxNQUFNLElBQUksT0FBTyxJQUFJLENBQUMsTUFBTSxDQUFDLElBQUksS0FBSyxVQUFVLENBQUMsQ0FBQyxDQUFDO2dCQUMxRCxJQUFJLENBQUMsTUFBTSxDQUFDLElBQUksQ0FBQyxPQUFPLEVBQUUsS0FBSyxFQUFFLGVBQWUsQ0FBQyxDQUFBO1lBQ25ELENBQUM7UUFDSCxDQUFDLENBQUE7UUFFRCw4QkFBWSxDQUFDLFNBQVMsQ0FBQyxNQUFNLEdBQUcsZ0JBQWdCLE9BQWdCLEVBQUUsS0FBWTtZQUU1RSxFQUFFLENBQUMsQ0FBQyxJQUFJLENBQUMsTUFBTSxJQUFJLE9BQU8sSUFBSSxDQUFDLE1BQU0sQ0FBQyxNQUFNLEtBQUssVUFBVSxDQUFDLENBQUMsQ0FBQztnQkFDNUQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsT0FBTyxFQUFFLEtBQUssQ0FBQyxDQUFBO1lBQ3BDLENBQUM7UUFDSCxDQUFDLENBQUE7UUFFRCw2QkFBVyxDQUFDLFNBQVMsQ0FBQyxJQUFJLEdBQUcsY0FBYyxPQUFnQixFQUFFLEtBQVksRUFBRSxlQUFlO1lBRXhGLEVBQUUsQ0FBQyxDQUFDLElBQUksQ0FBQyxNQUFNLElBQUksT0FBTyxJQUFJLENBQUMsTUFBTSxDQUFDLElBQUksS0FBSyxVQUFVLENBQUMsQ0FBQyxDQUFDO2dCQUMxRCxJQUFJLENBQUMsTUFBTSxDQUFDLElBQUksQ0FBQyxPQUFPLEVBQUUsS0FBSyxFQUFFLGVBQWUsQ0FBQyxDQUFBO1lBQ25ELENBQUM7UUFDSCxDQUFDLENBQUE7UUFFRCw2QkFBVyxDQUFDLFNBQVMsQ0FBQyxNQUFNLEdBQUcsZ0JBQWdCLE9BQWdCLEVBQUUsS0FBWTtZQUUzRSxFQUFFLENBQUMsQ0FBQyxJQUFJLENBQUMsTUFBTSxJQUFJLE9BQU8sSUFBSSxDQUFDLE1BQU0sQ0FBQyxNQUFNLEtBQUssVUFBVSxDQUFDLENBQUMsQ0FBQztnQkFDNUQsSUFBSSxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsT0FBTyxFQUFFLEtBQUssQ0FBQyxDQUFBO1lBQ3BDLENBQUM7UUFDSCxDQUFDLENBQUE7SUFDSCxDQUFDO0lBNUJlLDhCQUFzQix5QkE0QnJDLENBQUEiLCJzb3VyY2VzQ29udGVudCI6W119
+
+define('aurelia-binding-functions/parser-implementation',["require", "exports", 'aurelia-binding', './binding-function-scope'], function (require, exports, aurelia_binding_1, binding_function_scope_1) {
+    "use strict";
+    function patchParserImplementation() {
+        aurelia_binding_1.ParserImplementation.prototype.scopeFunctions = {};
+        aurelia_binding_1.ParserImplementation.prototype.registerScopeFunction = function (name, expressionClass) {
+            this.scopeFunctions[name] = expressionClass;
+        };
+        var EOF = new aurelia_binding_1.Token(-1, null);
+        aurelia_binding_1.ParserImplementation.prototype.parseAccessOrCallScope = function () {
+            var name = this.peek.key;
+            this.advance();
+            if (name === '$this') {
+                return new aurelia_binding_1.AccessThis(0);
+            }
+            var ancestor = 0;
+            while (name === '$parent') {
+                ancestor++;
+                if (this.optional('.')) {
+                    name = this.peek.key;
+                    this.advance();
+                }
+                else if (this.peek === EOF || this.peek.text === '(' || this.peek.text === '[' || this.peek.text === '}') {
+                    return new aurelia_binding_1.AccessThis(ancestor);
+                }
+                else {
+                    this.error("Unexpected token " + this.peek.text);
+                }
+            }
+            if (this.optional('(')) {
+                var args = this.parseExpressionList(')');
+                this.expect(')');
+                var ctor = this.scopeFunctions[name] || name.charAt(0) === '@' ? binding_function_scope_1.BindingFunctionScope : aurelia_binding_1.CallScope;
+                return new ctor(name, args, ancestor);
+            }
+            return new aurelia_binding_1.AccessScope(name, ancestor);
+        };
+    }
+    exports.patchParserImplementation = patchParserImplementation;
+});
+//# sourceMappingURL=parser-implementation.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicGFyc2VyLWltcGxlbWVudGF0aW9uLmpzIiwic291cmNlUm9vdCI6Ii9zb3VyY2UvIiwic291cmNlcyI6WyJwYXJzZXItaW1wbGVtZW50YXRpb24udHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7SUFHQTtRQUNFLHNDQUFvQixDQUFDLFNBQVMsQ0FBQyxjQUFjLEdBQUcsRUFBRSxDQUFDO1FBQ25ELHNDQUFvQixDQUFDLFNBQVMsQ0FBQyxxQkFBcUIsR0FBRyxVQUFTLElBQVksRUFBRSxlQUF3RDtZQUNwSSxJQUFJLENBQUMsY0FBYyxDQUFDLElBQUksQ0FBQyxHQUFHLGVBQWUsQ0FBQztRQUM5QyxDQUFDLENBQUE7UUFFRCxJQUFNLEdBQUcsR0FBRyxJQUFJLHVCQUFLLENBQUMsQ0FBQyxDQUFDLEVBQUUsSUFBSSxDQUFDLENBQUM7UUFFaEMsc0NBQW9CLENBQUMsU0FBUyxDQUFDLHNCQUFzQixHQUFHO1lBQ3RELElBQUksSUFBSSxHQUFXLElBQUksQ0FBQyxJQUFJLENBQUMsR0FBRyxDQUFDO1lBRWpDLElBQUksQ0FBQyxPQUFPLEVBQUUsQ0FBQztZQUVmLEVBQUUsQ0FBQyxDQUFDLElBQUksS0FBSyxPQUFPLENBQUMsQ0FBQyxDQUFDO2dCQUNyQixNQUFNLENBQUMsSUFBSSw0QkFBVSxDQUFDLENBQUMsQ0FBQyxDQUFDO1lBQzNCLENBQUM7WUFFRCxJQUFJLFFBQVEsR0FBRyxDQUFDLENBQUM7WUFDakIsT0FBTyxJQUFJLEtBQUssU0FBUyxFQUFFLENBQUM7Z0JBQzFCLFFBQVEsRUFBRSxDQUFDO2dCQUNYLEVBQUUsQ0FBQyxDQUFDLElBQUksQ0FBQyxRQUFRLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDO29CQUN2QixJQUFJLEdBQUcsSUFBSSxDQUFDLElBQUksQ0FBQyxHQUFHLENBQUM7b0JBQ3JCLElBQUksQ0FBQyxPQUFPLEVBQUUsQ0FBQztnQkFDakIsQ0FBQztnQkFBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsSUFBSSxDQUFDLElBQUksS0FBSyxHQUFHLElBQUksSUFBSSxDQUFDLElBQUksQ0FBQyxJQUFJLEtBQUssR0FBRyxJQUFJLElBQUksQ0FBQyxJQUFJLENBQUMsSUFBSSxLQUFLLEdBQUcsSUFBSSxJQUFJLENBQUMsSUFBSSxDQUFDLElBQUksS0FBSyxHQUFHLENBQUMsQ0FBQyxDQUFDO29CQUMzRyxNQUFNLENBQUMsSUFBSSw0QkFBVSxDQUFDLFFBQVEsQ0FBQyxDQUFDO2dCQUNsQyxDQUFDO2dCQUFDLElBQUksQ0FBQyxDQUFDO29CQUNOLElBQUksQ0FBQyxLQUFLLENBQUMsc0JBQW9CLElBQUksQ0FBQyxJQUFJLENBQUMsSUFBTSxDQUFDLENBQUM7Z0JBQ25ELENBQUM7WUFDSCxDQUFDO1lBRUQsRUFBRSxDQUFDLENBQUMsSUFBSSxDQUFDLFFBQVEsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDLENBQUM7Z0JBQ3ZCLElBQUksSUFBSSxHQUFHLElBQUksQ0FBQyxtQkFBbUIsQ0FBQyxHQUFHLENBQUMsQ0FBQztnQkFDekMsSUFBSSxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsQ0FBQztnQkFFakIsSUFBSSxJQUFJLEdBQUcsSUFBSSxDQUFDLGNBQWMsQ0FBQyxJQUFJLENBQUMsSUFBSSxJQUFJLENBQUMsTUFBTSxDQUFDLENBQUMsQ0FBQyxLQUFLLEdBQUcsR0FBRyw2Q0FBb0IsR0FBRywyQkFBUyxDQUFDO2dCQUNsRyxNQUFNLENBQUMsSUFBSSxJQUFJLENBQUMsSUFBSSxFQUFFLElBQUksRUFBRSxRQUFRLENBQUMsQ0FBQztZQUV4QyxDQUFDO1lBRUQsTUFBTSxDQUFDLElBQUksNkJBQVcsQ0FBQyxJQUFJLEVBQUUsUUFBUSxDQUFDLENBQUM7UUFDekMsQ0FBQyxDQUFBO0lBQ0gsQ0FBQztJQXpDZSxpQ0FBeUIsNEJBeUN4QyxDQUFBIiwic291cmNlc0NvbnRlbnQiOltdfQ==
+
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+define('aurelia-binding-functions/binding-function-scope',["require", "exports", 'aurelia-binding'], function (require, exports, aurelia_binding_1) {
+    "use strict";
+    var BindingFunctionScope = (function (_super) {
+        __extends(BindingFunctionScope, _super);
+        function BindingFunctionScope(name, args, ancestor) {
+            _super.call(this);
+            this.name = name;
+            this.args = args;
+            this.ancestor = ancestor;
+        }
+        BindingFunctionScope.prototype.connect = function (binding, scope) {
+            var lookupFunctions = binding.lookupFunctions || scope.resources.lookupFunctions;
+            var bindingFunction = lookupFunctions.bindingFunctions(this.name);
+            if (bindingFunction && typeof bindingFunction.connect === 'function') {
+                bindingFunction.connect(this, binding, scope);
+            }
+        };
+        BindingFunctionScope.prototype.assign = function (scope, value, lookupFunctions) {
+            lookupFunctions = lookupFunctions || scope.resources.lookupFunctions;
+            var bindingFunction = lookupFunctions.bindingFunctions(this.name);
+            if (bindingFunction && typeof bindingFunction.assign === 'function') {
+                return bindingFunction.assign(this, scope, value, lookupFunctions);
+            }
+            throw new Error("The BindingFunction '" + this.name + "' is not assignable");
+        };
+        BindingFunctionScope.prototype.evaluate = function (scope, lookupFunctions, mustEvaluate) {
+            lookupFunctions = lookupFunctions || scope.resources.lookupFunctions;
+            var bindingFunction = lookupFunctions.bindingFunctions(this.name);
+            if (bindingFunction) {
+                if (typeof bindingFunction.evaluate === 'function')
+                    return bindingFunction.evaluate(this, scope, lookupFunctions, mustEvaluate);
+                else
+                    throw new Error('The BindingFunction needs to implement evaluate()');
+            }
+            throw new Error("No BindingFunction under the name '" + this.name + "' is registered");
+        };
+        BindingFunctionScope.prototype.bind = function (binding, scope, lookupFunctions) {
+            lookupFunctions = lookupFunctions || binding.lookupFunctions || scope.resources.lookupFunctions;
+            var bindingFunction = lookupFunctions.bindingFunctions(this.name);
+            if (bindingFunction && typeof bindingFunction.bind === 'function') {
+                return bindingFunction.bind(this, binding, scope, lookupFunctions);
+            }
+        };
+        BindingFunctionScope.prototype.unbind = function (binding, scope) {
+            var lookupFunctions = binding.lookupFunctions || scope.resources.lookupFunctions;
+            var bindingFunction = lookupFunctions.bindingFunctions(this.name);
+            if (bindingFunction && typeof bindingFunction.unbind === 'function') {
+                bindingFunction.unbind(this, binding, scope);
+            }
+        };
+        return BindingFunctionScope;
+    }(aurelia_binding_1.Expression));
+    exports.BindingFunctionScope = BindingFunctionScope;
+});
+//# sourceMappingURL=binding-function-scope.js.map
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYmluZGluZy1mdW5jdGlvbi1zY29wZS5qcyIsInNvdXJjZVJvb3QiOiIvc291cmNlLyIsInNvdXJjZXMiOlsiYmluZGluZy1mdW5jdGlvbi1zY29wZS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7O0lBR0E7UUFBMEMsd0NBQVU7UUFLbEQsOEJBQVksSUFBSSxFQUFFLElBQUksRUFBRSxRQUFRO1lBQzlCLGlCQUFPLENBQUM7WUFFUixJQUFJLENBQUMsSUFBSSxHQUFHLElBQUksQ0FBQztZQUNqQixJQUFJLENBQUMsSUFBSSxHQUFHLElBQUksQ0FBQztZQUNqQixJQUFJLENBQUMsUUFBUSxHQUFHLFFBQVEsQ0FBQztRQUMzQixDQUFDO1FBRUQsc0NBQU8sR0FBUCxVQUFRLE9BQWdCLEVBQUUsS0FBWTtZQUNwQyxJQUFNLGVBQWUsR0FBRyxPQUFPLENBQUMsZUFBZSxJQUFJLEtBQUssQ0FBQyxTQUFTLENBQUMsZUFBZSxDQUFBO1lBRWxGLElBQU0sZUFBZSxHQUFHLGVBQWUsQ0FBQyxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFvQixDQUFBO1lBQ3RGLEVBQUUsQ0FBQyxDQUFDLGVBQWUsSUFBSSxPQUFPLGVBQWUsQ0FBQyxPQUFPLEtBQUssVUFBVSxDQUFDLENBQUMsQ0FBQztnQkFDckUsZUFBZSxDQUFDLE9BQU8sQ0FBQyxJQUFJLEVBQUUsT0FBTyxFQUFFLEtBQUssQ0FBQyxDQUFBO1lBQy9DLENBQUM7UUFDSCxDQUFDO1FBRUQscUNBQU0sR0FBTixVQUFPLEtBQVksRUFBRSxLQUFVLEVBQUUsZUFBb0I7WUFDbkQsZUFBZSxHQUFHLGVBQWUsSUFBSSxLQUFLLENBQUMsU0FBUyxDQUFDLGVBQWUsQ0FBQTtZQUNwRSxJQUFNLGVBQWUsR0FBRyxlQUFlLENBQUMsZ0JBQWdCLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBb0IsQ0FBQTtZQUN0RixFQUFFLENBQUMsQ0FBQyxlQUFlLElBQUksT0FBTyxlQUFlLENBQUMsTUFBTSxLQUFLLFVBQVUsQ0FBQyxDQUFDLENBQUM7Z0JBQ3BFLE1BQU0sQ0FBQyxlQUFlLENBQUMsTUFBTSxDQUFDLElBQUksRUFBRSxLQUFLLEVBQUUsS0FBSyxFQUFFLGVBQWUsQ0FBQyxDQUFBO1lBQ3BFLENBQUM7WUFDRCxNQUFNLElBQUksS0FBSyxDQUFDLDBCQUF3QixJQUFJLENBQUMsSUFBSSx3QkFBcUIsQ0FBQyxDQUFBO1FBQ3pFLENBQUM7UUFFRCx1Q0FBUSxHQUFSLFVBQVMsS0FBWSxFQUFFLGVBQWdCLEVBQUUsWUFBc0I7WUFDN0QsZUFBZSxHQUFHLGVBQWUsSUFBSSxLQUFLLENBQUMsU0FBUyxDQUFDLGVBQWUsQ0FBQTtZQUNwRSxJQUFNLGVBQWUsR0FBRyxlQUFlLENBQUMsZ0JBQWdCLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBb0IsQ0FBQTtZQUN0RixFQUFFLENBQUMsQ0FBQyxlQUFlLENBQUMsQ0FBQyxDQUFDO2dCQUNwQixFQUFFLENBQUMsQ0FBQyxPQUFPLGVBQWUsQ0FBQyxRQUFRLEtBQUssVUFBVSxDQUFDO29CQUNqRCxNQUFNLENBQUMsZUFBZSxDQUFDLFFBQVEsQ0FBQyxJQUFJLEVBQUUsS0FBSyxFQUFFLGVBQWUsRUFBRSxZQUFZLENBQUMsQ0FBQTtnQkFDN0UsSUFBSTtvQkFDRixNQUFNLElBQUksS0FBSyxDQUFDLG1EQUFtRCxDQUFDLENBQUE7WUFDeEUsQ0FBQztZQUNELE1BQU0sSUFBSSxLQUFLLENBQUMsd0NBQXNDLElBQUksQ0FBQyxJQUFJLG9CQUFpQixDQUFDLENBQUE7UUFDbkYsQ0FBQztRQUVELG1DQUFJLEdBQUosVUFBSyxPQUFnQixFQUFFLEtBQVksRUFBRSxlQUFlO1lBQ2xELGVBQWUsR0FBRyxlQUFlLElBQUksT0FBTyxDQUFDLGVBQWUsSUFBSSxLQUFLLENBQUMsU0FBUyxDQUFDLGVBQWUsQ0FBQTtZQUMvRixJQUFNLGVBQWUsR0FBRyxlQUFlLENBQUMsZ0JBQWdCLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBb0IsQ0FBQTtZQUN0RixFQUFFLENBQUMsQ0FBQyxlQUFlLElBQUksT0FBTyxlQUFlLENBQUMsSUFBSSxLQUFLLFVBQVUsQ0FBQyxDQUFDLENBQUM7Z0JBQ2xFLE1BQU0sQ0FBQyxlQUFlLENBQUMsSUFBSSxDQUFDLElBQUksRUFBRSxPQUFPLEVBQUUsS0FBSyxFQUFFLGVBQWUsQ0FBQyxDQUFBO1lBQ3BFLENBQUM7UUFDSCxDQUFDO1FBRUQscUNBQU0sR0FBTixVQUFPLE9BQWdCLEVBQUUsS0FBWTtZQUNuQyxJQUFNLGVBQWUsR0FBRyxPQUFPLENBQUMsZUFBZSxJQUFJLEtBQUssQ0FBQyxTQUFTLENBQUMsZUFBZSxDQUFBO1lBQ2xGLElBQU0sZUFBZSxHQUFHLGVBQWUsQ0FBQyxnQkFBZ0IsQ0FBQyxJQUFJLENBQUMsSUFBSSxDQUFvQixDQUFBO1lBQ3RGLEVBQUUsQ0FBQyxDQUFDLGVBQWUsSUFBSSxPQUFPLGVBQWUsQ0FBQyxNQUFNLEtBQUssVUFBVSxDQUFDLENBQUMsQ0FBQztnQkFDcEUsZUFBZSxDQUFDLE1BQU0sQ0FBQyxJQUFJLEVBQUUsT0FBTyxFQUFFLEtBQUssQ0FBQyxDQUFBO1lBQzlDLENBQUM7UUFDSCxDQUFDO1FBQ0gsMkJBQUM7SUFBRCxDQUFDLEFBMURELENBQTBDLDRCQUFVLEdBMERuRDtJQTFEWSw0QkFBb0IsdUJBMERoQyxDQUFBIiwic291cmNlc0NvbnRlbnQiOltdfQ==
+
+function _aureliaConfigureModuleLoader(){requirejs.config({"baseUrl":"src/","paths":{"aurelia-binding":"../node_modules\\aurelia-binding\\dist\\amd\\aurelia-binding","aurelia-bootstrapper":"../node_modules\\aurelia-bootstrapper\\dist\\amd\\aurelia-bootstrapper","aurelia-event-aggregator":"../node_modules\\aurelia-event-aggregator\\dist\\amd\\aurelia-event-aggregator","aurelia-dependency-injection":"../node_modules\\aurelia-dependency-injection\\dist\\amd\\aurelia-dependency-injection","aurelia-framework":"../node_modules\\aurelia-framework\\dist\\amd\\aurelia-framework","aurelia-history":"../node_modules\\aurelia-history\\dist\\amd\\aurelia-history","aurelia-fetch-client":"../node_modules\\aurelia-fetch-client\\dist\\amd\\aurelia-fetch-client","aurelia-history-browser":"../node_modules\\aurelia-history-browser\\dist\\amd\\aurelia-history-browser","aurelia-loader":"../node_modules\\aurelia-loader\\dist\\amd\\aurelia-loader","aurelia-loader-default":"../node_modules\\aurelia-loader-default\\dist\\amd\\aurelia-loader-default","aurelia-logging":"../node_modules\\aurelia-logging\\dist\\amd\\aurelia-logging","aurelia-logging-console":"../node_modules\\aurelia-logging-console\\dist\\amd\\aurelia-logging-console","aurelia-metadata":"../node_modules\\aurelia-metadata\\dist\\amd\\aurelia-metadata","aurelia-pal":"../node_modules\\aurelia-pal\\dist\\amd\\aurelia-pal","aurelia-pal-browser":"../node_modules\\aurelia-pal-browser\\dist\\amd\\aurelia-pal-browser","aurelia-path":"../node_modules\\aurelia-path\\dist\\amd\\aurelia-path","aurelia-polyfills":"../node_modules\\aurelia-polyfills\\dist\\amd\\aurelia-polyfills","aurelia-route-recognizer":"../node_modules\\aurelia-route-recognizer\\dist\\amd\\aurelia-route-recognizer","aurelia-router":"../node_modules\\aurelia-router\\dist\\amd\\aurelia-router","aurelia-rxjs":"../node_modules\\aurelia-rxjs\\dist\\index","aurelia-task-queue":"../node_modules\\aurelia-task-queue\\dist\\amd\\aurelia-task-queue","aurelia-templating":"../node_modules\\aurelia-templating\\dist\\amd\\aurelia-templating","aurelia-templating-binding":"../node_modules\\aurelia-templating-binding\\dist\\amd\\aurelia-templating-binding","text":"../node_modules\\text\\text","app-bundle":"../scripts/app-bundle"},"packages":[{"name":"aurelia-templating-resources","location":"../node_modules/aurelia-templating-resources/dist/amd","main":"aurelia-templating-resources"},{"name":"aurelia-templating-router","location":"../node_modules/aurelia-templating-router/dist/amd","main":"aurelia-templating-router"},{"name":"aurelia-testing","location":"../node_modules/aurelia-testing/dist/amd","main":"aurelia-testing"},{"name":"aurelia-validation","location":"../node_modules/aurelia-validation/dist/amd","main":"aurelia-validation"},{"name":"aurelia-dialog","location":"../node_modules/aurelia-dialog/dist/amd","main":"aurelia-dialog"},{"name":"rxjs","location":"../node_modules/rxjs","main":"Rx"},{"name":"aurelia-binding-functions","location":"../node_modules/aurelia-binding-functions/dist","main":"index"}],"stubModules":["text"],"shim":{},"bundles":{"app-bundle":["models/image","components/image-dlg/image-dlg","app","environment","main","resources/index","services/data-service","components/data/data","components/form/form","components/hello/hello","components/obs-ex/obs-ex","components/spinner/spinner","views/data-view/data-view","views/form-view/form-view","views/hello-view/hello-view","views/home-view/home-view","views/obs-ex-view/obs-ex-view","aurelia-dialog/dialog-configuration","aurelia-dialog/renderer","aurelia-dialog/dialog-settings","aurelia-dialog/dialog-renderer","aurelia-dialog/ux-dialog","aurelia-dialog/ux-dialog-header","aurelia-dialog/dialog-controller","aurelia-dialog/lifecycle","aurelia-dialog/dialog-cancel-error","aurelia-dialog/ux-dialog-body","aurelia-dialog/ux-dialog-footer","aurelia-dialog/attach-focus","aurelia-dialog/dialog-service","aurelia-validation/get-target-dom-element","aurelia-validation/property-info","aurelia-validation/validate-binding-behavior","aurelia-validation/validate-trigger","aurelia-validation/validate-binding-behavior-base","aurelia-validation/validation-controller","aurelia-validation/validator","aurelia-validation/validate-result","aurelia-validation/validation-controller-factory","aurelia-validation/validation-errors-custom-attribute","aurelia-validation/validation-renderer-custom-attribute","aurelia-validation/implementation/rules","aurelia-validation/implementation/standard-validator","aurelia-validation/implementation/validation-messages","aurelia-validation/implementation/validation-parser","aurelia-validation/implementation/util","aurelia-validation/implementation/validation-rules","rxjs/Subject","rxjs/Observable","rxjs/util/root","rxjs/util/toSubscriber","rxjs/Subscriber","rxjs/util/isFunction","rxjs/Subscription","rxjs/util/isArray","rxjs/util/isObject","rxjs/util/tryCatch","rxjs/util/errorObject","rxjs/util/UnsubscriptionError","rxjs/Observer","rxjs/symbol/rxSubscriber","rxjs/symbol/observable","rxjs/util/ObjectUnsubscribedError","rxjs/SubjectSubscription","rxjs/add/observable/bindCallback","rxjs/observable/bindCallback","rxjs/observable/BoundCallbackObservable","rxjs/AsyncSubject","rxjs/add/observable/bindNodeCallback","rxjs/observable/bindNodeCallback","rxjs/observable/BoundNodeCallbackObservable","rxjs/add/observable/combineLatest","rxjs/observable/combineLatest","rxjs/util/isScheduler","rxjs/observable/ArrayObservable","rxjs/observable/ScalarObservable","rxjs/observable/EmptyObservable","rxjs/operator/combineLatest","rxjs/OuterSubscriber","rxjs/util/subscribeToResult","rxjs/util/isArrayLike","rxjs/util/isPromise","rxjs/symbol/iterator","rxjs/InnerSubscriber","rxjs/add/observable/concat","rxjs/observable/concat","rxjs/operator/concat","rxjs/operator/mergeAll","rxjs/add/observable/defer","rxjs/observable/defer","rxjs/observable/DeferObservable","rxjs/add/observable/empty","rxjs/observable/empty","rxjs/add/observable/forkJoin","rxjs/observable/forkJoin","rxjs/observable/ForkJoinObservable","rxjs/add/observable/from","rxjs/observable/from","rxjs/observable/FromObservable","rxjs/observable/PromiseObservable","rxjs/observable/IteratorObservable","rxjs/observable/ArrayLikeObservable","rxjs/operator/observeOn","rxjs/Notification","rxjs/add/observable/fromEvent","rxjs/observable/fromEvent","rxjs/observable/FromEventObservable","rxjs/add/observable/fromEventPattern","rxjs/observable/fromEventPattern","rxjs/observable/FromEventPatternObservable","rxjs/add/observable/fromPromise","rxjs/observable/fromPromise","rxjs/add/observable/generate","rxjs/observable/GenerateObservable","rxjs/add/observable/if","rxjs/observable/if","rxjs/observable/IfObservable","rxjs/add/observable/interval","rxjs/observable/interval","rxjs/observable/IntervalObservable","rxjs/util/isNumeric","rxjs/scheduler/async","rxjs/scheduler/AsyncAction","rxjs/scheduler/Action","rxjs/scheduler/AsyncScheduler","rxjs/Scheduler","rxjs/add/observable/merge","rxjs/observable/merge","rxjs/operator/merge","rxjs/add/observable/race","rxjs/operator/race","rxjs/add/observable/never","rxjs/observable/never","rxjs/observable/NeverObservable","rxjs/util/noop","rxjs/add/observable/of","rxjs/observable/of","rxjs/add/observable/onErrorResumeNext","rxjs/operator/onErrorResumeNext","rxjs/add/observable/pairs","rxjs/observable/pairs","rxjs/observable/PairsObservable","rxjs/add/observable/range","rxjs/observable/range","rxjs/observable/RangeObservable","rxjs/add/observable/using","rxjs/observable/using","rxjs/observable/UsingObservable","rxjs/add/observable/throw","rxjs/observable/throw","rxjs/observable/ErrorObservable","rxjs/add/observable/timer","rxjs/observable/timer","rxjs/observable/TimerObservable","rxjs/util/isDate","rxjs/add/observable/zip","rxjs/observable/zip","rxjs/operator/zip","rxjs/add/observable/dom/ajax","rxjs/observable/dom/ajax","rxjs/observable/dom/AjaxObservable","rxjs/operator/map","rxjs/add/observable/dom/webSocket","rxjs/observable/dom/webSocket","rxjs/observable/dom/WebSocketSubject","rxjs/ReplaySubject","rxjs/scheduler/queue","rxjs/scheduler/QueueAction","rxjs/scheduler/QueueScheduler","rxjs/util/assign","rxjs/add/operator/buffer","rxjs/operator/buffer","rxjs/add/operator/bufferCount","rxjs/operator/bufferCount","rxjs/add/operator/bufferTime","rxjs/operator/bufferTime","rxjs/add/operator/bufferToggle","rxjs/operator/bufferToggle","rxjs/add/operator/bufferWhen","rxjs/operator/bufferWhen","rxjs/add/operator/catch","rxjs/operator/catch","rxjs/add/operator/combineAll","rxjs/operator/combineAll","rxjs/add/operator/combineLatest","rxjs/add/operator/concat","rxjs/add/operator/concatAll","rxjs/operator/concatAll","rxjs/add/operator/concatMap","rxjs/operator/concatMap","rxjs/operator/mergeMap","rxjs/add/operator/concatMapTo","rxjs/operator/concatMapTo","rxjs/operator/mergeMapTo","rxjs/add/operator/count","rxjs/operator/count","rxjs/add/operator/dematerialize","rxjs/operator/dematerialize","rxjs/add/operator/debounce","rxjs/operator/debounce","rxjs/add/operator/debounceTime","rxjs/operator/debounceTime","rxjs/add/operator/defaultIfEmpty","rxjs/operator/defaultIfEmpty","rxjs/add/operator/delay","rxjs/operator/delay","rxjs/add/operator/delayWhen","rxjs/operator/delayWhen","rxjs/add/operator/distinct","rxjs/operator/distinct","rxjs/util/Set","rxjs/add/operator/distinctUntilChanged","rxjs/operator/distinctUntilChanged","rxjs/add/operator/distinctUntilKeyChanged","rxjs/operator/distinctUntilKeyChanged","rxjs/add/operator/do","rxjs/operator/do","rxjs/add/operator/exhaust","rxjs/operator/exhaust","rxjs/add/operator/exhaustMap","rxjs/operator/exhaustMap","rxjs/add/operator/expand","rxjs/operator/expand","rxjs/add/operator/elementAt","rxjs/operator/elementAt","rxjs/util/ArgumentOutOfRangeError","rxjs/add/operator/filter","rxjs/operator/filter","rxjs/add/operator/finally","rxjs/operator/finally","rxjs/add/operator/find","rxjs/operator/find","rxjs/add/operator/findIndex","rxjs/operator/findIndex","rxjs/add/operator/first","rxjs/operator/first","rxjs/util/EmptyError","rxjs/add/operator/groupBy","rxjs/operator/groupBy","rxjs/util/Map","rxjs/util/MapPolyfill","rxjs/util/FastMap","rxjs/add/operator/ignoreElements","rxjs/operator/ignoreElements","rxjs/add/operator/isEmpty","rxjs/operator/isEmpty","rxjs/add/operator/audit","rxjs/operator/audit","rxjs/add/operator/auditTime","rxjs/operator/auditTime","rxjs/add/operator/last","rxjs/operator/last","rxjs/add/operator/let","rxjs/operator/let","rxjs/add/operator/every","rxjs/operator/every","rxjs/add/operator/map","rxjs/add/operator/mapTo","rxjs/operator/mapTo","rxjs/add/operator/materialize","rxjs/operator/materialize","rxjs/add/operator/max","rxjs/operator/max","rxjs/operator/reduce","rxjs/add/operator/merge","rxjs/add/operator/mergeAll","rxjs/add/operator/mergeMap","rxjs/add/operator/mergeMapTo","rxjs/add/operator/mergeScan","rxjs/operator/mergeScan","rxjs/add/operator/min","rxjs/operator/min","rxjs/add/operator/multicast","rxjs/operator/multicast","rxjs/observable/ConnectableObservable","rxjs/add/operator/observeOn","rxjs/add/operator/onErrorResumeNext","rxjs/add/operator/pairwise","rxjs/operator/pairwise","rxjs/add/operator/partition","rxjs/operator/partition","rxjs/util/not","rxjs/add/operator/pluck","rxjs/operator/pluck","rxjs/add/operator/publish","rxjs/operator/publish","rxjs/add/operator/publishBehavior","rxjs/operator/publishBehavior","rxjs/BehaviorSubject","rxjs/add/operator/publishReplay","rxjs/operator/publishReplay","rxjs/add/operator/publishLast","rxjs/operator/publishLast","rxjs/add/operator/race","rxjs/add/operator/reduce","rxjs/add/operator/repeat","rxjs/operator/repeat","rxjs/add/operator/repeatWhen","rxjs/operator/repeatWhen","rxjs/add/operator/retry","rxjs/operator/retry","rxjs/add/operator/retryWhen","rxjs/operator/retryWhen","rxjs/add/operator/sample","rxjs/operator/sample","rxjs/add/operator/sampleTime","rxjs/operator/sampleTime","rxjs/add/operator/scan","rxjs/operator/scan","rxjs/add/operator/sequenceEqual","rxjs/operator/sequenceEqual","rxjs/add/operator/share","rxjs/operator/share","rxjs/add/operator/shareReplay","rxjs/operator/shareReplay","rxjs/add/operator/single","rxjs/operator/single","rxjs/add/operator/skip","rxjs/operator/skip","rxjs/add/operator/skipLast","rxjs/operator/skipLast","rxjs/add/operator/skipUntil","rxjs/operator/skipUntil","rxjs/add/operator/skipWhile","rxjs/operator/skipWhile","rxjs/add/operator/startWith","rxjs/operator/startWith","rxjs/add/operator/subscribeOn","rxjs/operator/subscribeOn","rxjs/observable/SubscribeOnObservable","rxjs/scheduler/asap","rxjs/scheduler/AsapAction","rxjs/util/Immediate","rxjs/scheduler/AsapScheduler","rxjs/add/operator/switch","rxjs/operator/switch","rxjs/add/operator/switchMap","rxjs/operator/switchMap","rxjs/add/operator/switchMapTo","rxjs/operator/switchMapTo","rxjs/add/operator/take","rxjs/operator/take","rxjs/add/operator/takeLast","rxjs/operator/takeLast","rxjs/add/operator/takeUntil","rxjs/operator/takeUntil","rxjs/add/operator/takeWhile","rxjs/operator/takeWhile","rxjs/add/operator/throttle","rxjs/operator/throttle","rxjs/add/operator/throttleTime","rxjs/operator/throttleTime","rxjs/add/operator/timeInterval","rxjs/operator/timeInterval","rxjs/add/operator/timeout","rxjs/operator/timeout","rxjs/util/TimeoutError","rxjs/add/operator/timeoutWith","rxjs/operator/timeoutWith","rxjs/add/operator/timestamp","rxjs/operator/timestamp","rxjs/add/operator/toArray","rxjs/operator/toArray","rxjs/add/operator/toPromise","rxjs/operator/toPromise","rxjs/add/operator/window","rxjs/operator/window","rxjs/add/operator/windowCount","rxjs/operator/windowCount","rxjs/add/operator/windowTime","rxjs/operator/windowTime","rxjs/add/operator/windowToggle","rxjs/operator/windowToggle","rxjs/add/operator/windowWhen","rxjs/operator/windowWhen","rxjs/add/operator/withLatestFrom","rxjs/operator/withLatestFrom","rxjs/add/operator/zip","rxjs/add/operator/zipAll","rxjs/operator/zipAll","rxjs/testing/TestScheduler","rxjs/testing/ColdObservable","rxjs/testing/SubscriptionLoggable","rxjs/testing/SubscriptionLog","rxjs/util/applyMixins","rxjs/testing/HotObservable","rxjs/scheduler/VirtualTimeScheduler","rxjs/scheduler/animationFrame","rxjs/scheduler/AnimationFrameAction","rxjs/util/AnimationFrame","rxjs/scheduler/AnimationFrameScheduler"]}})}

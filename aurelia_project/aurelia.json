@@ -112,6 +112,7 @@
           "aurelia-polyfills",
           "aurelia-route-recognizer",
           "aurelia-router",
+          "aurelia-rxjs",
           "aurelia-task-queue",
           "aurelia-templating",
           "aurelia-templating-binding",
@@ -141,8 +142,18 @@
             "name": "aurelia-dialog",
             "path": "../node_modules/aurelia-dialog/dist/amd",
             "main": "aurelia-dialog"
+          },
+          {
+            "name": "rxjs",
+            "path": "../node_modules/rxjs",
+            "main": "Rx"
+          },
+          {
+            "name": "aurelia-binding-functions",
+            "path": "../node_modules/aurelia-binding-functions/dist",
+            "main": "index"
           }
-        ]
+       ]
       }
     ]
   },
